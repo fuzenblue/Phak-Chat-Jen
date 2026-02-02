@@ -10,7 +10,7 @@ Phak Chat Jen (ผักชัดเจน) AI-Driven Dynamic Pricing &amp; Hype
 ## ✨ Key Features
 
 ### For Sellers - "Snap, Price, Sell"
-* **AI Valuation:** วิเคราะห์ความสดของผักจากภาพถ่าย (RGB) ด้วยเทคโนโลยี Computer Vision ที่แม่นยำ
+* **AI Valuation:** วิเคราะห์ความสดของผักจากภาพถ่าย (RGB) ด้วยเทคโนโลยีที่แม่นยำ
 * **Dynamic Pricing Agent:** คำนวณราคาแนะนำอัตโนมัติ โดยอิงจาก *Freshness Score* และ *Shelf Life* (Depreciation Model)
 * **One-Click Listing:** ลงขายสินค้าทันที ลดขั้นตอนยุ่งยาก ตอบโจทย์ผู้ใช้งานทุกวัย
 
