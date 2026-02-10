@@ -18,6 +18,8 @@ Phak-Chat-Jen/
 │   │   │   ├── ChatPage.jsx            /chat
 │   │   │   ├── MapPage.jsx             /map
 │   │   │   └── DatabasePage.jsx        /database
+│   │   ├── context/
+│   │   │   └── AppContext.jsx          React Context (shared state)
 │   │   ├── services/
 │   │   │   └── api.js                  Axios base config
 │   │   ├── App.jsx                     Router + Layout
