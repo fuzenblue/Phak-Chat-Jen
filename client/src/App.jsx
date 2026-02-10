@@ -5,7 +5,6 @@ import Footer from './components/Footer'
 import HomePage from './pages/HomePage'
 import ChatPage from './pages/ChatPage'
 import MapPage from './pages/MapPage'
-import DatabasePage from './pages/DatabasePage'
 
 const App = () => {
   return (
@@ -15,7 +14,6 @@ const App = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/map" element={<MapPage />} />
-        <Route path="/database" element={<DatabasePage />} />
       </Routes>
       <Footer />
     </Router>
