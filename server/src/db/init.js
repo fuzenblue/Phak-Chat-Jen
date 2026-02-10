@@ -57,13 +57,13 @@ const initDB = async () => {
         ('สมหญิง รักสวย', 'somying@example.com', 'ลองใช้งานฐานข้อมูล'),
         ('วิชัย พัฒนา', 'wichai@example.com', 'ระบบทำงานได้ดีมาก!')
       `);
-            console.log('✅ Sample data inserted into "contacts"');
+            console.log('Sample data inserted into "contacts"');
         }
 
-        console.log('\n🎉 Database initialization complete!\n');
+        console.log('\n Database initialization complete!\n');
         process.exit(0);
     } catch (error) {
-        console.error('❌ Database initialization failed:', error.message);
+        console.error('Database initialization failed:', error.message);
         process.exit(1);
     }
 };

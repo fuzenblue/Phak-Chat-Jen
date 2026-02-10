@@ -1,119 +1,129 @@
-# 🚀 Phak-Chat-Jen
+# Phak-Chat-Jen
 
-A modern full-stack web application built with **React + Vite + Tailwind CSS** (frontend) and **Node.js + Express** (backend), featuring integrations with **Google Gemini AI**, **Google Maps API**, and **PostgreSQL**.
+A modern full-stack web application built with **React + Vite + Tailwind CSS** (frontend) and **Node.js + Express** (backend), featuring integrations with **Google Gemini AI**, **Google Maps API**, **Cloudinary**, and **PostgreSQL (Render)**.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Phak-Chat-Jen/
-├── client/                  # Frontend (React + Vite + Tailwind CSS)
+├── client/                      # Frontend (React + Vite + Tailwind CSS)
 │   ├── src/
+│   │   ├── components/
+│   │   │   ├── Navbar.jsx
+│   │   │   └── Footer.jsx
 │   │   ├── pages/
-│   │   │   ├── HomePage.jsx        # Landing page
-│   │   │   ├── ChatPage.jsx        # Gemini AI chat
-│   │   │   ├── MapPage.jsx         # Google Maps explorer
-│   │   │   └── DatabasePage.jsx    # PostgreSQL CRUD
+│   │   │   ├── HomePage.jsx            /
+│   │   │   ├── ChatPage.jsx            /chat
+│   │   │   ├── MapPage.jsx             /map
+│   │   │   └── DatabasePage.jsx        /database
 │   │   ├── services/
-│   │   │   └── api.js              # API service layer (Axios)
-│   │   ├── App.jsx                 # Main app with routing
-│   │   ├── main.jsx                # Entry point
-│   │   └── index.css               # Tailwind CSS
-│   ├── .env                        # Frontend env vars
-│   └── vite.config.js              # Vite config + proxy
+│   │   │   └── api.js                  Axios base config
+│   │   ├── App.jsx                     Router + Layout
+│   │   ├── App.css
+│   │   ├── main.jsx                    Entry point
+│   │   └── index.css                   Tailwind CSS
+│   ├── .env                            Frontend env vars
+│   └── vite.config.js                  Vite + Tailwind + Proxy
 │
-├── server/                  # Backend (Node.js + Express)
+├── server/                      # Backend (Node.js + Express)
 │   ├── src/
 │   │   ├── config/
-│   │   │   └── database.js         # PostgreSQL connection pool
+│   │   │   ├── database.js             PostgreSQL connection (DATABASE_URL)
+│   │   │   └── cloudinary.js           Cloudinary config
 │   │   ├── db/
-│   │   │   └── init.js             # Database initialization script
+│   │   │   └── init.js                 Database init script
 │   │   ├── routes/
-│   │   │   ├── gemini.js           # Gemini AI API routes
-│   │   │   ├── maps.js             # Google Maps API routes
-│   │   │   └── db.js               # PostgreSQL CRUD routes
-│   │   └── index.js                # Express server entry point
-│   ├── .env                        # Backend env vars
+│   │   │   ├── gemini.js               Gemini AI API
+│   │   │   ├── maps.js                 Google Maps API
+│   │   │   ├── db.js                   PostgreSQL CRUD
+│   │   │   └── upload.js               Cloudinary upload
+│   │   └── index.js                    Express server
+│   ├── .env                            Backend env vars
 │   └── package.json
 │
+├── .gitignore
 └── README.md
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-| Layer      | Technology              |
-|------------|-------------------------|
+| Layer      | Technology                     |
+|------------|--------------------------------|
 | Frontend   | React 19, Vite, Tailwind CSS v4 |
-| Backend    | Node.js, Express 5      |
-| Database   | PostgreSQL              |
-| AI         | Google Gemini 2.0 Flash |
-| Maps       | Google Maps Platform    |
+| Backend    | Node.js, Express 5             |
+| Database   | PostgreSQL (Render)             |
+| AI         | Google Gemini 2.0 Flash         |
+| Maps       | Google Maps Platform            |
+| Storage    | Cloudinary (Image Upload)       |
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
 ### 1. Prerequisites
 
-- **Node.js** 18+ installed
-- **PostgreSQL** installed and running
-- **API Keys**: Google Gemini API key + Google Maps API key
+- **Node.js** 18+
+- **PostgreSQL** database (Render)
+- **API Keys**: Gemini, Google Maps, Cloudinary
 
 ### 2. Setup Environment Variables
 
 **Backend** (`server/.env`):
 ```env
 PORT=5000
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=your_password
-DB_NAME=phakchatjen
-GEMINI_API_KEY=your_gemini_api_key
-GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+NODE_ENV=development
+
+# PostgreSQL (Render)
+DATABASE_URL=your_render_database_url_here
+
+# Google Gemini AI
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Google Maps
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud_name_here
+CLOUDINARY_API_KEY=your_cloudinary_api_key_here
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret_here
 ```
 
 **Frontend** (`client/.env`):
 ```env
-VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 ```
 
-### 3. Create PostgreSQL Database
-
-```sql
-CREATE DATABASE phakchatjen;
-```
-
-### 4. Install Dependencies
+### 3. Install Dependencies
 
 ```bash
-# Install server dependencies
+# Server
 cd server
 npm install
 
-# Install client dependencies
+# Client
 cd ../client
 npm install
 ```
 
-### 5. Initialize Database Tables
+### 4. Initialize Database Tables
 
 ```bash
 cd server
 npm run db:init
 ```
 
-### 6. Run the Application
+### 5. Run the Application
 
 ```bash
-# Terminal 1 - Start backend
+# Terminal 1 - Backend
 cd server
 npm run dev
 
-# Terminal 2 - Start frontend
+# Terminal 2 - Frontend
 cd client
 npm run dev
 ```
@@ -124,7 +134,7 @@ npm run dev
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
 ### Gemini AI
 | Method | Endpoint           | Description        |
@@ -139,6 +149,12 @@ npm run dev
 | GET    | `/api/maps/directions`     | Get directions      |
 | GET    | `/api/maps/geocode`        | Geocode address     |
 
+### Cloudinary Upload
+| Method | Endpoint                   | Description         |
+|--------|----------------------------|---------------------|
+| POST   | `/api/upload`              | Upload image        |
+| DELETE | `/api/upload/:publicId`    | Delete image        |
+
 ### Database (CRUD)
 | Method | Endpoint               | Description      |
 |--------|------------------------|------------------|
@@ -152,6 +168,42 @@ npm run dev
 
 ---
 
-## 📝 License
+## Database Tables
+
+### contacts
+| Column     | Type         |
+|------------|--------------|
+| id         | SERIAL PK    |
+| name       | VARCHAR(255) |
+| email      | VARCHAR(255) |
+| message    | TEXT         |
+| created_at | TIMESTAMP    |
+| updated_at | TIMESTAMP    |
+
+### places
+| Column     | Type             |
+|------------|------------------|
+| id         | SERIAL PK        |
+| name       | VARCHAR(255)     |
+| address    | TEXT             |
+| latitude   | DOUBLE PRECISION |
+| longitude  | DOUBLE PRECISION |
+| place_id   | VARCHAR(255) UQ  |
+| rating     | DECIMAL(2,1)     |
+| notes      | TEXT             |
+| created_at | TIMESTAMP        |
+| updated_at | TIMESTAMP        |
+
+### chat_history
+| Column       | Type      |
+|--------------|-----------|
+| id           | SERIAL PK |
+| user_message | TEXT      |
+| ai_response  | TEXT      |
+| created_at   | TIMESTAMP |
+
+---
+
+## License
 
 ISC
