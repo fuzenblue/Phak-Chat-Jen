@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import MerchantNavbar from '../components/MerchantNavbar';
 
 const MOCK_PRODUCTS = [
   { 
@@ -60,30 +61,13 @@ export default function MyProductsPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-prompt">
       {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 px-4 py-3 sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <span className="material-symbols-outlined text-green-500">eco</span>
-            <div className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
-              <span className="text-sm font-bold text-gray-800 truncate max-w-[150px] sm:max-w-none">
-                ป้าแดงผักสดคลองเตย
-              </span>
-              <span className="text-gray-300 text-xs">|</span>
-              <span className="text-sm text-gray-400 truncate">ป้าแดง</span>
-            </div>
-          </div>
-          
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-1 text-red-500 font-medium text-sm hover:bg-red-50 px-3 py-1.5 rounded-xl transition-colors shrink-0"
-          >
-            <span className="material-symbols-outlined text-[18px]">logout</span>
-            <span className="hidden sm:inline">ออกจากระบบ</span>
-          </button>
-        </div>
-      </nav>
+      <MerchantNavbar 
+        shopName="ป้าแดงผักสดคลองเตย"
+        ownerName="ป้าแดง"
+        onLogout={handleLogout}
+      />
 
-      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 py-6 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-extrabold text-gray-900 font-funnel tracking-tight">
             สินค้าของฉัน
@@ -134,7 +118,7 @@ export default function MyProductsPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredProducts.map((product) => (
               <div key={product.id} className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col h-full">
                 <div className="relative aspect-square overflow-hidden bg-gray-100">

@@ -13,25 +13,28 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/chat" element={<ChatPage />} />
+        {/* Fullscreen Pages (No restriction in App.jsx) */}
+        <Route path="/map" element={<MapPage />} />
         <Route path="/login" element={<LoginRegisterPage />} />
         
-        <Route path="/map" element={
-          <div className="pt-14">
-            <CustomerNavbar title="แผนที่ร้านค้า" />
-            <MapPage />
-          </div>
-        } />
-        
-        <Route path="/shops/:id" element={
-          <div className="pt-14">
-            <CustomerNavbar title="รายละเอียดร้าน" back />
-            <StoreDetailPage />
-          </div>
-        } />
-
-        <Route path="/dashboard" element={<MyProductsPage />} />
+        {/* Standard Pages wrapped with spacing container */}
+        <Route 
+          path="*" 
+          element={
+            <div className="min-h-screen bg-gray-50">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/chat" element={<ChatPage />} />
+                  
+                  <Route path="/shops/:id" element={<StoreDetailPage />} />
+                  
+                  <Route path="/dashboard" element={<MyProductsPage />} />
+                </Routes>
+              </div>
+            </div>
+          } 
+        />
       </Routes>
     </Router>
   )

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import CustomerNavbar from '../components/CustomerNavbar';
 
 const MOCK_SHOP = {
   id: 's-001',
@@ -65,8 +66,9 @@ export default function StoreDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent flex flex-col font-prompt pb-10">
-      <main className="px-4 py-6 space-y-6 max-w-lg mx-auto w-full">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-prompt pb-10 pt-14">
+      <CustomerNavbar title="ร้านและสินค้า" back />
+      <main className="py-6 space-y-6">
         <section className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 space-y-5">
           <div className="flex gap-4">
             <img src={MOCK_SHOP.image_url} alt={MOCK_SHOP.name} className="w-20 h-20 rounded-2xl object-cover shadow-sm bg-gray-100 shrink-0"/>
@@ -110,7 +112,7 @@ export default function StoreDetailPage() {
             </h3>
           </div>
 
-          <div className="grid grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5">
             {MOCK_PRODUCTS.map(product => {
               const status = getFreshnessStatus(product.freshness_score);
               const discount = product.original_price ? Math.round(((product.original_price - product.price) / product.original_price) * 100) : 0;
