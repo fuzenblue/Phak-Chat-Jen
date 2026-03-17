@@ -5,6 +5,8 @@ import Footer from './components/Footer'
 import HomePage from './pages/HomePage'
 import ChatPage from './pages/ChatPage'
 import MapPage from './pages/MapPage'
+import ProtectedRoute from './contexts/ProtectedRoute';
+import LoginRegisterPage from './pages/LoginRegisterPage';
 
 const App = () => {
   return (
@@ -13,7 +15,8 @@ const App = () => {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/chat" element={<ChatPage />} />
-        <Route path="/map" element={<MapPage />} />
+        <Route path="/login" element={<LoginRegisterPage />} />
+        <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
       </Routes>
       <Footer />
     </Router>
