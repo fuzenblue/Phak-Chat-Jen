@@ -1,0 +1,173 @@
+import { useNavigate } from 'react-router-dom';
+
+const MOCK_SHOP = {
+  id: 's-001',
+  name: 'ป้าแดงผักสดคลองเตย',
+  description: 'ผักสดส่งตรงจากสวน คัดสรรคุณภาพทุกวัน ประสบการณ์กว่า 20 ปี',
+  image_url: 'https://images.unsplash.com/photo-1488459711621-27bef697b055?q=80&w=400&auto=format&fit=crop',
+  is_open: true,
+  opening_hours: '05:00 - 18:00',
+  address: 'ตลาดคลองเตย แผงที่ 12 ถนนพระราม 4 กรุงเทพฯ',
+  latitude: 13.722,
+  longitude: 100.558
+};
+
+const MOCK_PRODUCTS = [
+  {
+    id: 1,
+    name: 'กะหล่ำปลี',
+    type: 'ผักกาด',
+    freshness_score: 92,
+    price: 25,
+    original_price: null,
+    ai_summary: 'ผักมีความสดใหม่มาก ใบกรอบแน่น ไม่มีรอยช้ำ สีเขียวอ่อนสม่ำเสมอ คุณภาพเกรด A',
+    image_url: 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?q=80&w=400&auto=format&fit=crop'
+  },
+  {
+    id: 2,
+    name: 'มะเขือเทศราชินี',
+    type: 'ผล',
+    freshness_score: 75,
+    price: 35,
+    original_price: 45,
+    ai_summary: 'ผิวตึงดี มีความหวานตามธรรมชาติ มีตำหนิเล็กน้อยที่ขั้ว แต่ยังคงรสชาติที่ดี',
+    image_url: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?q=80&w=400&auto=format&fit=crop'
+  },
+  {
+    id: 3,
+    name: 'ผักบุ้งจีน',
+    type: 'ผักใบ',
+    freshness_score: 58,
+    price: 15,
+    original_price: 25,
+    ai_summary: 'เริ่มมีอาการสลดเล็กน้อยที่ปลายใบแต่ยังล้างน้ำใช้ได้ แนะนำให้ปรุงสุกทันทีเพื่อความอร่อย',
+    image_url: 'https://images.unsplash.com/photo-1550143813-fdf696803212?q=80&w=400&auto=format&fit=crop'
+  }
+];
+
+export default function StoreDetailPage() {
+  const navigate = useNavigate();
+
+  const getFreshnessStatus = (score) => {
+    if (score >= 75) return { label: 'สด', color: 'bg-green-100 text-green-600' };
+    if (score >= 50) return { label: 'ใกล้หมด', color: 'bg-yellow-100 text-yellow-600' };
+    return { label: 'ควรเร่งขาย', color: 'bg-red-100 text-red-500' };
+  };
+
+  const getFreshnessBarColor = (score) => {
+    if (score >= 75) return 'bg-green-500';
+    if (score >= 50) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  const handleNavigate = () => {
+    window.open(`https://www.google.com/maps?q=${MOCK_SHOP.latitude},${MOCK_SHOP.longitude}`, '_blank');
+  };
+
+  return (
+    <div className="min-h-screen bg-transparent flex flex-col font-prompt pb-10">
+      <main className="px-4 py-6 space-y-6 max-w-lg mx-auto w-full">
+        <section className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 space-y-5">
+          <div className="flex gap-4">
+            <img src={MOCK_SHOP.image_url} alt={MOCK_SHOP.name} className="w-20 h-20 rounded-2xl object-cover shadow-sm bg-gray-100 shrink-0"/>
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-start mb-1">
+                <h2 className="font-bold text-lg text-gray-800 leading-tight truncate">
+                  {MOCK_SHOP.name}
+                </h2>
+                <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${MOCK_SHOP.is_open ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                  {MOCK_SHOP.is_open ? 'เปิดอยู่' : 'ปิดแล้ว'}
+                </span>
+              </div>
+              <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">
+                {MOCK_SHOP.description}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-gray-400">schedule</span>
+              <span>วันนี้เปิด {MOCK_SHOP.opening_hours}</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="material-symbols-outlined text-[18px] text-gray-400 shrink-0 mt-0.5">location_on</span>
+              <span className="line-clamp-2">{MOCK_SHOP.address}</span>
+            </div>
+          </div>
+
+          <button onClick={handleNavigate} className="w-full bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-bold rounded-2xl py-3.5 shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2">
+            <span className="material-symbols-outlined text-[20px]">directions</span>
+            นำทางไปร้าน
+          </button>
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+              สินค้าในร้าน 
+              <span className="text-gray-400 font-normal text-sm">({MOCK_PRODUCTS.length})</span>
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3.5">
+            {MOCK_PRODUCTS.map(product => {
+              const status = getFreshnessStatus(product.freshness_score);
+              const discount = product.original_price ? Math.round(((product.original_price - product.price) / product.original_price) * 100) : 0;
+
+              return (
+                <div key={product.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col group hover:shadow-md transition-shadow">
+                  <div className="relative aspect-square bg-gray-100">
+                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                    {discount > 0 && (
+                      <div className="absolute top-2 right-2">
+                        <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-lg shadow-sm">
+                          -{discount}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-3.5 flex flex-col flex-1 space-y-2">
+                    <div className="flex flex-col gap-1">
+                      <h4 className="font-bold text-gray-800 truncate text-sm">
+                        {product.name}
+                      </h4>
+                      <div className="flex flex-wrap gap-1">
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold ${status.color}`}>
+                          {status.label}
+                        </span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-400 font-medium">
+                          {product.type}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-[10px]">
+                        <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden mr-2">
+                          <div className={`h-full ${getFreshnessBarColor(product.freshness_score)} transition-all`} style={{ width: `${product.freshness_score}%` }}/>
+                        </div>
+                        <span className="shrink-0 font-bold text-gray-500 font-funnel">{product.freshness_score}/100</span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 line-clamp-2 leading-snug">
+                        {product.ai_summary}
+                      </p>
+                    </div>
+
+                    <div className="pt-1 mt-auto flex items-baseline gap-1.5">
+                      <span className="text-green-600 font-bold font-funnel text-base">฿{product.price}</span>
+                      {product.original_price && (
+                        <span className="text-gray-300 line-through text-[10px] font-funnel">฿{product.original_price}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
