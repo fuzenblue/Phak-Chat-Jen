@@ -2,21 +2,22 @@
 import "dotenv/config";
 
 // test image
-const TEST_IMAGE_URL = "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800";
+const TEST_IMAGE_URL = "https://plus.unsplash.com/premium_photo-1763058513102-af705972e83c?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
 const VEG_TYPE = "ผักสลัด";
 
 async function scanVegetable(imageUrl, vegType) {
   const prompt = `
-คุณเป็นผู้เชี่ยวชาญด้านการประเมินความสดของผักสด
-ดูรูปภาพ ${vegType} นี้แล้วตอบเป็น JSON เท่านั้น ห้ามมีข้อความอื่นนอกจาก JSON
+You are an expert in evaluating the freshness of vegetables.
+Analyze the image of ${vegType} and respond ONLY with a JSON object.
+Do not include any text, explanation, or markdown outside the JSON.
 
 {
-  "freshness_score": <ตัวเลข 0.0 ถึง 1.0 โดย 1.0 = สดมาก, 0.0 = เน่าเสีย>,
-  "freshness_label": <"สด" หรือ "พอใช้" หรือ "ใกล้เสีย">,
-  "summary": <อธิบายสภาพผักใน 1-2 ประโยคภาษาไทย>,
-  "price_multiplier": <ตัวเลข 0.5 ถึง 1.0 คูณกับราคาตั้งต้นเพื่อได้ราคาแนะนำ>
+  "freshness_score": <float 0.0 to 1.0, where 1.0 = very fresh, 0.0 = rotten>,
+  "freshness_label": <"สด" or "พอใช้" or "ใกล้เสีย">,
+  "summary": <1-2 sentences in Thai describing the vegetable condition>,
+  "price_multiplier": <float 0.5 to 1.0 to multiply with the original price>
 }
-  `.trim();
+`.trim();
 
   const response = await fetch(
     "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
