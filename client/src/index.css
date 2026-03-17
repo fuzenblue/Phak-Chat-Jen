@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Funnel Sans", "Prompt", sans-serif;
+  --font-prompt: "Prompt", sans-serif;
+  --font-funnel: "Funnel Sans", sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+}
