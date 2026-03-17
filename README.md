@@ -1,6 +1,6 @@
 # Phak-Chat-Jen
 
-A modern full-stack web application built with **React + Vite + Tailwind CSS** (frontend) and **Node.js + Express** (backend), featuring integrations with **Google Gemini AI**, **Google Maps API**, **Cloudinary**, and **PostgreSQL (Render)**.
+A modern full-stack web application built with **React + Vite + Tailwind CSS** (frontend) and **Node.js + Express** (backend), featuring integrations with **Qwen VL Max (Alibaba DashScope)**, **Google Maps API**, **Cloudinary**, and **PostgreSQL + PostGIS (Render)**.
 
 ---
 
@@ -11,15 +11,19 @@ Phak-Chat-Jen/
 ├── client/                      # Frontend (React + Vite + Tailwind CSS)
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── Navbar.jsx
-│   │   │   └── Footer.jsx
+│   │   │   ├── CustomerNavbar.jsx
+│   │   │   └── MerchantNavbar.jsx
+│   │   ├── contexts/
+│   │   │   ├── AppContext.jsx          React Context (shared state)
+│   │   │   ├── AuthContext.jsx         Authentication context
+│   │   │   └── ProtectedRoute.jsx      Route guard
 │   │   ├── pages/
 │   │   │   ├── HomePage.jsx            /
 │   │   │   ├── ChatPage.jsx            /chat
 │   │   │   ├── MapPage.jsx             /map
-│   │   │   └── DatabasePage.jsx        /database
-│   │   ├── context/
-│   │   │   └── AppContext.jsx          React Context (shared state)
+│   │   │   ├── LoginRegisterPage.jsx   /login
+│   │   │   ├── MyProductsPage.jsx      /dashboard
+│   │   │   └── StoreDetailPage.jsx     /shops/:id
 │   │   ├── services/
 │   │   │   └── api.js                  Axios base config
 │   │   ├── App.jsx                     Router + Layout
@@ -35,13 +39,25 @@ Phak-Chat-Jen/
 │   │   │   ├── database.js             PostgreSQL connection (DATABASE_URL)
 │   │   │   └── cloudinary.js           Cloudinary config
 │   │   ├── db/
-│   │   │   └── init.js                 Database init script
+│   │   │   ├── migrate.js              Migration runner
+│   │   │   └── migrations/
+│   │   │       ├── 01_create_tables.sql
+│   │   │       ├── 02_enable_postgis.sql
+│   │   │       └── 03_agent_tables.sql
+│   │   ├── middleware/
+│   │   │   └── auth.js                 JWT authentication middleware
 │   │   ├── routes/
-│   │   │   ├── gemini.js               Gemini AI API
+│   │   │   ├── auth.js                 Auth (register / login)
+│   │   │   ├── shops.js                Shops CRUD
+│   │   │   ├── posts.js                Posts CRUD
+│   │   │   ├── scans.js                Vegetable scan (Qwen VL Max)
 │   │   │   ├── maps.js                 Google Maps API
-│   │   │   ├── db.js                   PostgreSQL CRUD
 │   │   │   └── upload.js               Cloudinary upload
+│   │   ├── utils/
+│   │   │   ├── isOpenNow.js            Business hours helper
+│   │   │   └── isOpenNow.test.js
 │   │   └── index.js                    Express server
+│   ├── test-scan.js                    Manual scan test script
 │   ├── .env                            Backend env vars
 │   └── package.json
 │
@@ -53,14 +69,15 @@ Phak-Chat-Jen/
 
 ## Tech Stack
 
-| Layer      | Technology                     |
-|------------|--------------------------------|
-| Frontend   | React 19, Vite, Tailwind CSS v4 |
-| Backend    | Node.js, Express 5             |
-| Database   | PostgreSQL (Render)             |
-| AI         | Google Gemini 2.0 Flash         |
-| Maps       | Google Maps Platform            |
-| Storage    | Cloudinary (Image Upload)       |
+| Layer      | Technology                              |
+|------------|-----------------------------------------|
+| Frontend   | React 19, Vite 7, Tailwind CSS v4       |
+| Backend    | Node.js, Express 5                      |
+| Database   | PostgreSQL + PostGIS (Render)           |
+| AI Vision  | Qwen VL Max (Alibaba DashScope)         |
+| Auth       | JWT (jsonwebtoken)                      |
+| Maps       | Google Maps Platform                    |
+| Storage    | Cloudinary (Image Upload)               |
 
 ---
 
@@ -69,21 +86,25 @@ Phak-Chat-Jen/
 ### 1. Prerequisites
 
 - **Node.js** 18+
-- **PostgreSQL** database (Render)
-- **API Keys**: Gemini, Google Maps, Cloudinary
+- **PostgreSQL** database with PostGIS extension (Render)
+- **API Keys**: Alibaba DashScope, Google Maps, Cloudinary
 
 ### 2. Setup Environment Variables
 
 **Backend** (`server/.env`):
 ```env
+# Server
 PORT=5000
 NODE_ENV=development
 
-# PostgreSQL (Render)
-DATABASE_URL=your_render_database_url_here
+# PostgreSQL
+DATABASE_URL=your_database_url_here
 
-# Google Gemini AI
-GEMINI_API_KEY=your_gemini_api_key_here
+# JWT
+JWT_SECRET=your_jwt_secret_here
+
+# Alibaba DashScope (Qwen VL Max)
+DASHSCOPE_API_KEY=your_dashscope_api_key_here
 
 # Google Maps
 GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
@@ -111,11 +132,11 @@ cd ../client
 npm install
 ```
 
-### 4. Initialize Database Tables
+### 4. Run Database Migrations
 
 ```bash
 cd server
-npm run db:init
+npm run db:migrate
 ```
 
 ### 5. Run the Application
@@ -133,76 +154,6 @@ npm run dev
 - **Frontend**: http://localhost:5173
 - **Backend**: http://localhost:5000
 - **Health Check**: http://localhost:5000/api/health
-
----
-
-## API Endpoints
-
-### Gemini AI
-| Method | Endpoint           | Description        |
-|--------|--------------------|--------------------|
-| POST   | `/api/gemini/chat` | Send prompt to AI  |
-
-### Google Maps
-| Method | Endpoint                   | Description         |
-|--------|----------------------------|---------------------|
-| GET    | `/api/maps/search?query=`  | Search places       |
-| GET    | `/api/maps/place/:placeId` | Get place details   |
-| GET    | `/api/maps/directions`     | Get directions      |
-| GET    | `/api/maps/geocode`        | Geocode address     |
-
-### Cloudinary Upload
-| Method | Endpoint                   | Description         |
-|--------|----------------------------|---------------------|
-| POST   | `/api/upload`              | Upload image        |
-| DELETE | `/api/upload/:publicId`    | Delete image        |
-
-### Database (CRUD)
-| Method | Endpoint               | Description      |
-|--------|------------------------|------------------|
-| GET    | `/api/db/:resource`    | Get all records  |
-| GET    | `/api/db/:resource/:id`| Get one record   |
-| POST   | `/api/db/:resource`    | Create record    |
-| PUT    | `/api/db/:resource/:id`| Update record    |
-| DELETE | `/api/db/:resource/:id`| Delete record    |
-
-**Available resources**: `contacts`, `places`, `chat_history`
-
----
-
-## Database Tables
-
-### contacts
-| Column     | Type         |
-|------------|--------------|
-| id         | SERIAL PK    |
-| name       | VARCHAR(255) |
-| email      | VARCHAR(255) |
-| message    | TEXT         |
-| created_at | TIMESTAMP    |
-| updated_at | TIMESTAMP    |
-
-### places
-| Column     | Type             |
-|------------|------------------|
-| id         | SERIAL PK        |
-| name       | VARCHAR(255)     |
-| address    | TEXT             |
-| latitude   | DOUBLE PRECISION |
-| longitude  | DOUBLE PRECISION |
-| place_id   | VARCHAR(255) UQ  |
-| rating     | DECIMAL(2,1)     |
-| notes      | TEXT             |
-| created_at | TIMESTAMP        |
-| updated_at | TIMESTAMP        |
-
-### chat_history
-| Column       | Type      |
-|--------------|-----------|
-| id           | SERIAL PK |
-| user_message | TEXT      |
-| ai_response  | TEXT      |
-| created_at   | TIMESTAMP |
 
 ---
 
