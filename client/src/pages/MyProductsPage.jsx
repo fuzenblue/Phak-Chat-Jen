@@ -54,7 +54,7 @@ export default function MyProductsPage() {
   };
 
   const handleLogout = () => {
-    if (logout) logout();
+    // TODO: call logout() from useAuth when backend is ready
     navigate('/login');
   };
 
