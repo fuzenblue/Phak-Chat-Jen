@@ -2,85 +2,152 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
-
 export default function LoginRegisterPage() {
-    const [mode, setMode] = useState('login'); // 'login' | 'register'
-    const [form, setForm] = useState({ email: '', password: '', phone_number: '' });
-    const [error, setError] = useState('');
+    const navigate = useNavigate();
+    // const { login } = useAuth();
+
+    const [phone, setPhone] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showDemo, setShowDemo] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    const { login } = useAuth();
-    const navigate = useNavigate();
-
-    function handleChange(e) {
-        setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-        setError('');
-    }
-
     async function handleSubmit(e) {
-        async function handleSubmit(e) {
         e.preventDefault();
         setLoading(true);
 
-        // mock delay จำลอง network
+        // Mock delay 800ms
         await new Promise(res => setTimeout(res, 800));
 
-        // mock user
-        const mockUser = { id: 'u-001', email: form.email, role: 'merchant' };
+        // Mock login data
+        const mockUser = { id: 'u-001', phone, role: 'merchant' };
         const mockToken = 'mock-token-123';
 
-        login(mockUser, mockToken);
-        navigate('/dashboard');
-
-        setLoading(false);
+        if (login) {
+            login(mockUser, mockToken);
         }
+        
+        navigate('/dashboard');
+        setLoading(false);
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-md w-full max-w-sm p-8">
+        <div className="min-h-screen bg-green-50 flex flex-col items-center justify-center p-6 relative">
+            
+            {/* ปุ่มกลับหน้าแผนที่ */}
+            <button 
+                onClick={() => navigate('/map')}
+                className="absolute top-6 left-6 text-gray-500 hover:text-green-600 flex items-center gap-1 text-sm font-medium transition-colors"
+            >
+                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                กลับหน้าแผนที่
+            </button>
 
-                {/* Logo / Title */}
-                <h1 className="text-2xl font-bold text-green-600 text-center mb-1">
-                    Phak-Chat-Jen
-                </h1>
-                <p className="text-gray-400 text-sm text-center mb-6">
-                    {mode === 'login' ? 'Login' : 'Register'}
-                </p>
+            {/* Header / Logo */}
+            <div className="flex flex-col items-center mb-8">
+                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-lg mb-4">
+                    <span className="material-symbols-outlined text-white text-[40px] leading-none">eco</span>
+                </div>
+                <h1 className="text-3xl font-bold text-green-700">ผักชัดเจน</h1>
+                <p className="text-gray-500 mt-1 font-prompt">เข้าสู่ระบบสำหรับร้านค้า</p>
+            </div>
 
-                {/* Error */}
-                {error && (
-                    <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-2 mb-4">
-                        {error}
+            {/* Card Form */}
+            <div className="bg-white w-full max-w-md rounded-3xl shadow-xl shadow-green-900/5 p-8 border border-white">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    
+                    {/* Phone Field */}
+                    <div className="space-y-2">
+                        <label className="text-sm font-semibold text-gray-700 ml-1">เบอร์โทรศัพท์</label>
+                        <div className="relative group">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 material-symbols-outlined text-[20px]">
+                                call
+                            </span>
+                            <input 
+                                type="tel" 
+                                placeholder="08x-xxx-xxxx"
+                                value={phone} 
+                                onChange={(e) => setPhone(e.target.value)}
+                                required 
+                                className="w-full bg-gray-50 border-none rounded-2xl pl-12 pr-4 py-4 text-gray-800 focus:ring-2 focus:ring-green-500 transition-all outline-none"
+                            />
+                        </div>
                     </div>
-                )}
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <input type="email" name="email" placeholder="Email" value={form.email} onChange={handleChange} required className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+                    {/* Password Field */}
+                    <div className="space-y-2">
+                        <label className="text-sm font-semibold text-gray-700 ml-1">รหัสผ่าน</label>
+                        <div className="relative group">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 material-symbols-outlined text-[20px]">
+                                lock
+                            </span>
+                            <input 
+                                type={showPassword ? "text" : "password"} 
+                                placeholder="••••••••"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                className="w-full bg-gray-50 border-none rounded-2xl pl-12 pr-12 py-4 text-gray-800 focus:ring-2 focus:ring-green-500 transition-all outline-none"
+                            />
+                            <button 
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-[20px]">
+                                    {showPassword ? "visibility" : "visibility_off"}
+                                </span>
+                            </button>
+                        </div>
+                    </div>
 
-                    <input type="password" name="password" placeholder="Password (at least 8 characters)" value={form.password} onChange={handleChange} required minLength={8} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
-
-                    {mode === 'register' && (
-                        <input type="tel" name="phone_number" placeholder="Phone Number" value={form.phone_number} onChange={handleChange} required className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
-                    )}
-
-                    <button type="submit" disabled={loading} className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white font-semibold rounded-xl py-3 text-sm transition-colors">
-                        {loading ? 'Loading...' : mode === 'login' ? 'Login' : 'Register'}
+                    <button 
+                        type="submit" 
+                        disabled={loading}
+                        className="w-full bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-bold rounded-2xl py-4 shadow-lg shadow-green-200 transition-all flex items-center justify-center font-prompt"
+                    >
+                        {loading ? (
+                            <span className="animate-spin material-symbols-outlined">progress_activity</span>
+                        ) : "เข้าสู่ระบบ"}
                     </button>
                 </form>
-
-                {/* Toggle mode */}
-                <p className="text-center text-sm text-gray-400 mt-6">
-                    {mode === 'login' ? 'No account?' : 'Already have an account?'}
-                    {' '}
-                    <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }} className="text-green-500 font-medium hover:underline">
-                        {mode === 'login' ? 'Register' : 'Login'}
-                    </button>
-                </p>
-
             </div>
+
+            {/* Demo Accounts */}
+            <div className="mt-8 w-full max-w-md">
+                <button 
+                    onClick={() => setShowDemo(!showDemo)}
+                    className="w-full flex items-center justify-center gap-2 text-green-600 font-medium hover:text-green-700 transition-colors"
+                >
+                    ดูบัญชีทดสอบ (Demo) 
+                    <span className={`material-symbols-outlined text-[18px] transition-transform duration-300 ${showDemo ? 'rotate-180' : ''}`}>
+                        keyboard_arrow_down
+                    </span>
+                </button>
+                
+                {showDemo && (
+                    <div className="mt-3 bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-green-200 text-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="flex justify-between items-center py-2 border-b border-green-100">
+                            <span className="text-gray-500">โทร:</span>
+                            <span className="font-mono font-bold text-gray-700">081-234-5678</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2">
+                            <span className="text-gray-500">รหัสผ่าน:</span>
+                            <span className="font-mono font-bold text-gray-700">password123</span>
+                        </div>
+                        <button 
+                            onClick={() => {
+                                setPhone('081-234-5678');
+                                setPassword('password123');
+                            }}
+                            className="w-full mt-3 py-2 bg-green-100 text-green-700 rounded-xl font-medium hover:bg-green-200 transition-colors"
+                        >
+                            ใช้ชุดข้อมูลนี้
+                        </button>
+                    </div>
+                )}
+            </div>
+            
         </div>
     );
 }

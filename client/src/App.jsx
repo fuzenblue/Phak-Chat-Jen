@@ -11,12 +11,11 @@ import LoginRegisterPage from './pages/LoginRegisterPage';
 const App = () => {
   return (
     <Router>
-      <Navbar />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/login" element={<LoginRegisterPage />} />
-        <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
+        <Route path="/map" element={<MapPage />} />
       </Routes>
       <Footer />
     </Router>
