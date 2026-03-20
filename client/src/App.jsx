@@ -8,7 +8,8 @@ import ProtectedRoute from './contexts/ProtectedRoute';
 import LoginRegisterPage from './pages/LoginRegisterPage';
 import MyProductsPage from './pages/MyProductsPage';
 import StoreDetailPage from './pages/StoreDetailPage';
-
+import MyProducts from './pages/MyProducts'
+import AddProduct from './pages/AddProduct'
 const App = () => {
   return (
     <Router>
@@ -30,6 +31,8 @@ const App = () => {
                   <Route path="/shops/:id" element={<StoreDetailPage />} />
                   
                   <Route path="/dashboard" element={<MyProductsPage />} />
+                                    
+                  <Route path="/add-product" element={<AddProduct />} />
                 </Routes>
               </div>
             </div>
