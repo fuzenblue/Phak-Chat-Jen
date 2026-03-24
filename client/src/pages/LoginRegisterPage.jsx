@@ -19,19 +19,27 @@ export default function LoginRegisterPage() {
         setLoading(true);
         setError('');
 
+        console.log("--- [1] เริ่มการ Login ---");
+        console.log("Data to send:", { email, password: "******" });
+        
         try {
             // 3. เชื่อมต่อกับ Backend จริงๆ
             const response = await axios.post('http://localhost:5000/api/auth/login', {
                 email: email, // ส่ง email ไป
                 password: password
             });
-
-            if (response.data.token) {
+            console.log("--- [2] Server ตอบกลับมาแล้ว! ---");
+            console.log("Status Code:", response.status);
+            console.log("Response Data:", response.data);
+            if (response.status === 200) {
                 // เก็บข้อมูลลง context
                 login(response.data.user, response.data.token);
                 navigate('/dashboard');
             }
         } catch (err) {
+            console.error("--- [X] เกิดข้อผิดพลาด! ---");
+            console.log("Error Status:", err.response?.status);
+            console.log("Error Message:", err.response?.data?.message);
             setError(err.response?.data?.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
         } finally {
             setLoading(false);
