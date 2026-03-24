@@ -10,10 +10,10 @@ const router = Router();
 // POST /register
 // ─────────────────────────────────────────
 router.post("/register", async (req, res) => {
-  const { username, email, password, role } = req.body;
+  const { email, password, role } = req.body;
 
   // 1) Validate required fields
-  if (!username || !email || !password || !role) {
+  if (!email || !password || !role) {
     return res.status(400).json({ message: "กรุณากรอกข้อมูลให้ครบทุกช่อง" });
   }
 
@@ -87,7 +87,7 @@ router.post("/login", async (req, res) => {
     );
 
     // 5) Return token + user (exclude password)
-    const { password: _pw, ...userWithoutPassword } = user;
+    const { password_hash: _pw, ...userWithoutPassword } = user;
 
     return res.status(200).json({
       message: "เข้าสู่ระบบสำเร็จ",

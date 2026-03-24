@@ -1,40 +1,47 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios'; 
 
 export default function LoginRegisterPage() {
     const navigate = useNavigate();
-    // const { login } = useAuth();
+    const { login } = useAuth(); 
 
-    const [phone, setPhone] = useState('');
+    const [email, setEmail] = useState(''); // 2. เปลี่ยนจาก phone เป็น email
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showDemo, setShowDemo] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(''); // เพิ่มตัวแปรเก็บ error
 
     async function handleSubmit(e) {
         e.preventDefault();
         setLoading(true);
+        setError('');
 
-        // Mock delay 800ms
-        await new Promise(res => setTimeout(res, 800));
+        try {
+            // 3. เชื่อมต่อกับ Backend จริงๆ
+            const response = await axios.post('http://localhost:5000/api/auth/login', {
+                email: email, // ส่ง email ไป
+                password: password
+            });
 
-        // Mock login data
-        const mockUser = { id: 'u-001', phone, role: 'merchant' };
-        const mockToken = 'mock-token-123';
-
-        // if (login) {
-        //     login(mockUser, mockToken);
-        // }
-        
-        navigate('/dashboard');
-        setLoading(false);
+            if (response.data.token) {
+                // เก็บข้อมูลลง context
+                login(response.data.user, response.data.token);
+                navigate('/dashboard');
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (
         <div className="min-h-screen bg-green-50 flex flex-col items-center justify-center relative font-prompt py-10">
             
-            <button onClick={() => navigate('/map')} className="fixed top-6 left-6 text-gray-500 hover:text-green-600 flex items-center gap-1 text-sm font-medium transition-colors z-30 px-16">
+            <button onClick={() => navigate('/map')} className="fixed top-6 left-6 text-gray-500 hover:text-green-600 flex items-center gap-1 text-sm font-medium transition-colors z-30 px-4 md:px-16">
                 <span className="material-symbols-outlined text-[18px]">arrow_back</span>
                 กลับหน้าแผนที่
             </button>
@@ -49,19 +56,26 @@ export default function LoginRegisterPage() {
                 </div>
 
                 <div className="bg-white w-full rounded-3xl shadow-xl shadow-green-900/5 p-8 border border-white">
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-50 text-red-500 text-sm rounded-xl text-center border border-red-100">
+                            {error}
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-6">
                         
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-gray-700 ml-1">เบอร์โทรศัพท์</label>
+                            {/* 4. เปลี่ยน Label เป็น อีเมล */}
+                            <label className="text-sm font-semibold text-gray-700 ml-1">อีเมล</label>
                             <div className="relative group">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 material-symbols-outlined text-[20px]">
-                                    call
+                                    mail {/* เปลี่ยนไอคอนเป็นรูปซองจดหมาย */}
                                 </span>
                                 <input 
-                                    type="tel" 
-                                    placeholder="08x-xxx-xxxx"
-                                    value={phone} 
-                                    onChange={(e) => setPhone(e.target.value)}
+                                    type="email" 
+                                    placeholder="example@mail.com"
+                                    value={email} 
+                                    onChange={(e) => setEmail(e.target.value)}
                                     required 
                                     className="w-full bg-gray-50 border-none rounded-2xl pl-12 pr-4 py-4 text-gray-800 focus:ring-2 focus:ring-green-500 transition-all outline-none font-sans"
                                 />
@@ -109,15 +123,15 @@ export default function LoginRegisterPage() {
                     {showDemo && (
                         <div className="mt-3 bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-green-200 text-sm animate-in fade-in slide-in-from-top-2 duration-300">
                             <div className="flex justify-between items-center py-2 border-b border-green-100">
-                                <span className="text-gray-500">โทร:</span>
-                                <span className="font-sans font-bold text-gray-700">081-234-5678</span>
+                                <span className="text-gray-500">อีเมล:</span>
+                                <span className="font-sans font-bold text-gray-700">test@gmail.com</span>
                             </div>
                             <div className="flex justify-between items-center py-2">
                                 <span className="text-gray-500">รหัสผ่าน:</span>
                                 <span className="font-sans font-bold text-gray-700">password123</span>
                             </div>
                             <button onClick={() => {
-                                    setPhone('081-234-5678');
+                                    setEmail('test@gmail.com');
                                     setPassword('password123');
                                 }} className="w-full mt-3 py-2 bg-green-100 text-green-700 rounded-xl font-medium hover:bg-green-200 transition-colors">
                                 ใช้ชุดข้อมูลนี้
