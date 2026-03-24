@@ -1,11 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import geminiRoutes from './routes/gemini.js';
-import mapsRoutes from './routes/maps.js';
-import dbRoutes from './routes/db.js';
-import uploadRoutes from './routes/upload.js';
-import pool from './config/database.js';
+// import geminiRoutes from './routes/gemini.js';
+// import mapsRoutes from './routes/maps.js';
+// import dbRoutes from './routes/db.js';
+// import uploadRoutes from './routes/upload.js';
+// import pool from './config/database.js';
+import authRoutes from './routes/auth.js'; 
 
 dotenv.config();
 
@@ -25,11 +26,11 @@ app.use((req, res, next) => {
 });
 
 // ==================== Routes ====================
-app.use('/api/gemini', geminiRoutes);
-app.use('/api/maps', mapsRoutes);
-app.use('/api/db', dbRoutes);
-app.use('/api/upload', uploadRoutes);
-
+// app.use('/api/gemini', geminiRoutes);
+// app.use('/api/maps', mapsRoutes);
+// app.use('/api/db', dbRoutes);
+// app.use('/api/upload', uploadRoutes);
+app.use('/api/auth', authRoutes);
 // ==================== Health Check ====================
 app.get('/api/health', async (req, res) => {
     try {
