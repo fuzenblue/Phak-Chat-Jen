@@ -1,0 +1,5 @@
+$kind: http-request
+name: GET /shops/:id
+url: "{{base_url}}/shops/{{shop_id}}"
+method: GET
+order: 4446943640843546

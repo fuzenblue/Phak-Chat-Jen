@@ -1,9 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import geminiRoutes from './routes/gemini.js';
 import mapsRoutes from './routes/maps.js';
-import dbRoutes from './routes/db.js';
+import shopsRoutes from './routes/shops.js';
+// import postsRoutes from './routes/posts.js';
+// import scansRoutes from './routes/scans.js';
 import uploadRoutes from './routes/upload.js';
 import pool from './config/database.js';
 
@@ -25,10 +26,13 @@ app.use((req, res, next) => {
 });
 
 // ==================== Routes ====================
-app.use('/api/gemini', geminiRoutes);
 app.use('/api/maps', mapsRoutes);
-app.use('/api/db', dbRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/v1/shops',  shopsRoutes);
+// app.use('/api/v1/posts',  postsRoutes);
+// app.use('/api/v1/scans',  scansRoutes);
+// app.use('/api/maps',      mapsRoutes);
+app.use('/api/upload',    uploadRoutes);
 
 // ==================== Health Check ====================
 app.get('/api/health', async (req, res) => {
@@ -66,7 +70,7 @@ app.get('/api/health', async (req, res) => {
 
 // ==================== Error Handler ====================
 app.use((err, req, res, next) => {
-    console.error('❌ Server Error:', err.message);
+    console.error('Server Error:', err.message);
     res.status(500).json({
         error: 'Internal Server Error',
         message: process.env.NODE_ENV === 'development' ? err.message : undefined,

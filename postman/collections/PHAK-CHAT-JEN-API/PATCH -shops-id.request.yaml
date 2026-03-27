@@ -1,0 +1,5 @@
+$kind: http-request
+name: PATCH /shops/:id
+url: ""
+method: GET
+order: 370767432236328

@@ -1,0 +1,8 @@
+$kind: collection
+name: PHAK-CHAT-JEN-API
+auth:
+  - id: 7cc7dde8-44be-46a9-bf04-349089dae7fb
+    type: bearer
+    name: Bearer Token
+    credentials:
+      token: "{{token}}"

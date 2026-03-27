@@ -24,7 +24,7 @@ Do not include any text, explanation, or markdown outside the JSON.
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.DASHSCOPE_API_KEY}`,
+        Authorization: `Bearer ${process.env.QWEN_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

@@ -1,0 +1,41 @@
+$kind: http-request
+name: POST /shops
+url: "{{base_url}}/shops"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"shop_name\": \"ป้าแดงผักสดคลองเตย\",\r
+
+    \  \"shop_address\": \"ตลาดคลองเตย แผงที่ 12 กรุงเทพฯ\",\r
+
+    \  \"description\": \"ผักสดส่งตรงจากสวน\",\r
+
+    \  \"shop_image_url\":
+    \"https://images.unsplash.com/photo-1488459711621-27bef697b055?w=400\",\r
+
+    \  \"latitude\": 13.7274,\r
+
+    \  \"longitude\": 100.5230,\r
+
+    \  \"opening_hours\": {\r
+
+    \    \"mon\": { \"open\": \"05:00\", \"close\": \"13:00\" },\r
+
+    \    \"tue\": { \"open\": \"05:00\", \"close\": \"13:00\" },\r
+
+    \    \"wed\": { \"open\": \"05:00\", \"close\": \"13:00\" },\r
+
+    \    \"thu\": { \"open\": \"05:00\", \"close\": \"13:00\" },\r
+
+    \    \"fri\": { \"open\": \"05:00\", \"close\": \"13:00\" },\r
+
+    \    \"sat\": { \"open\": \"05:00\", \"close\": \"14:00\" },\r
+
+    \    \"sun\": null\r
+
+    \  }\r
+
+    }"
+order: 1773789478769
