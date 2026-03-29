@@ -53,7 +53,7 @@ router.post('/', upload.single('image'), async (req, res) => {
             size: result.bytes,
         });
     } catch (error) {
-        console.error('❌ Upload Error:', error.message);
+        console.error('Upload Error:', error.message);
         res.status(500).json({ error: 'Failed to upload image', details: error.message });
     }
 });
@@ -69,7 +69,7 @@ router.delete('/:publicId', async (req, res) => {
 
         res.json({ message: 'Image deleted', result });
     } catch (error) {
-        console.error('❌ Delete Error:', error.message);
+        console.error('Delete Error:', error.message);
         res.status(500).json({ error: 'Failed to delete image', details: error.message });
     }
 });
