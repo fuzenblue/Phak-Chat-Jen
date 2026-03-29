@@ -24,6 +24,4 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# Postman
-postman/
-.postman*
+
