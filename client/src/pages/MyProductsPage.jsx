@@ -1,157 +1,212 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import MerchantNavbar from '../components/MerchantNavbar';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import MerchantNavbar from "../components/MerchantNavbar";
+import ProductCard from "../components/ProductCard";
+import api from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
+// ─── Mock data สำหรับแสดงผล ───────────────────────
 const MOCK_PRODUCTS = [
-  { 
-    id: 1, 
-    name: 'กะหล่ำปลี', 
-    price: 30, 
-    unit: 'หัว', 
-    status: 'active', 
-    freshness: 'สด',
-    freshness_score: 0.9,
-    image: 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?q=80&w=400&auto=format&fit=crop' 
+  {
+    id: "1",
+    name: "ผักกาดขาว",
+    category: "ผักกาด",
+    price: 30,
+    salePrice: null,
+    freshnessScore: 92,
+    imageUrl: "https://images.unsplash.com/photo-1597362925123-77861d3fbac7?w=400&q=80",
+    isActive: true,
   },
-  { 
-    id: 2, 
-    name: 'มะเขือเทศ', 
-    price: 25, 
-    unit: 'กก.', 
-    status: 'active', 
-    freshness: 'สด',
-    freshness_score: 0.85,
-    image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?q=80&w=400&auto=format&fit=crop' 
+  {
+    id: "2",
+    name: "มะเขือเทศราชินี",
+    category: "มะเขือเทศ",
+    price: 40,
+    salePrice: 32,
+    freshnessScore: 75,
+    imageUrl: "https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=400&q=80",
+    isActive: true,
   },
-  { 
-    id: 3, 
-    name: 'ผักกาดขาว', 
-    price: 20, 
-    unit: 'หัว', 
-    status: 'active', 
-    freshness: 'สด',
-    freshness_score: 0.95,
-    image: 'https://images.unsplash.com/photo-1550143813-fdf696803212?q=80&w=400&auto=format&fit=crop' 
+  {
+    id: "3",
+    name: "Chickpea",
+    category: "ถั่ว",
+    price: 25,
+    salePrice: 15,
+    freshnessScore: 58,
+    imageUrl: "https://images.unsplash.com/photo-1515543904379-3d757afe72e4?w=400&q=80",
+    isActive: true,
   },
+];
+
+const TABS = [
+  { key: "all",     label: "ทั้งหมด" },
+  { key: "selling", label: "กำลังขาย" },
+  { key: "soldout", label: "หมดแล้ว" },
 ];
 
 export default function MyProductsPage() {
   const navigate = useNavigate();
-//   const { logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('ทั้งหมด');
+  const { user, token, logout, loading: authLoading } = useAuth();
+  
+  const [products, setProducts]   = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState(null);
+  const [activeTab, setActiveTab] = useState("all");
+  const [deleteId, setDeleteId]   = useState(null);
 
-  const filteredProducts = activeTab === 'ทั้งหมด' 
-    ? MOCK_PRODUCTS 
-    : activeTab === 'กำลังขาย' 
-      ? MOCK_PRODUCTS.filter(p => p.status === 'active')
-      : MOCK_PRODUCTS.filter(p => p.status === 'out_of_stock');
+  // 🛡️ ส่วนป้องกัน: ถ้าไม่มี Token ให้ดีดออกหน้า Login ทันที (แก้ปัญหาย้อนกลับได้)
+  useEffect(() => {
+    if (!authLoading && !token) {
+      window.location.replace("/login"); 
+    }
+  }, [token, authLoading]);
+
+  // 🥬 ส่วนดึงข้อมูลสินค้า
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        // จำลองการโหลดข้อมูล 0.6 วินาที
+        await new Promise((r) => setTimeout(r, 600)); 
+        setProducts(MOCK_PRODUCTS);
+      } catch (err) {
+        setError("ไม่สามารถโหลดข้อมูลสินค้าได้");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (token) {
+      fetchProducts();
+    }
+  }, [token]);
+
+  // ป้องกันหน้าจอขาวแวบ หรือ error ตอน user ยังโหลดไม่เสร็จ
+  if (authLoading || !token) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-3 border-green-200 border-t-green-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Filter สินค้าตาม Tab
+  const filtered = products.filter((p) => {
+    if (activeTab === "selling") return p.isActive;
+    if (activeTab === "soldout") return !p.isActive;
+    return true;
+  });
 
   const counts = {
-    ทั้งหมด: MOCK_PRODUCTS.length,
-    กำลังขาย: MOCK_PRODUCTS.filter(p => p.status === 'active').length,
-    หมดแล้ว: MOCK_PRODUCTS.filter(p => p.status === 'out_of_stock').length,
+    all:     products.length,
+    selling: products.filter((p) => p.isActive).length,
+    soldout: products.filter((p) => !p.isActive).length,
   };
 
-  const handleLogout = () => {
-    // TODO: call logout() from useAuth when backend is ready
-    navigate('/login');
+  const handleDelete = async (id) => {
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+    setDeleteId(null);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-prompt">
-      {/* Navbar */}
+    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "'Sarabun', sans-serif" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+      {/* ✅ เชื่อม Navbar เข้ากับ AuthContext เรียบร้อย */}
       <MerchantNavbar 
-        shopName="ป้าแดงผักสดคลองเตย"
-        ownerName="ป้าแดง"
-        onLogout={handleLogout}
+        shopName={user?.shopName || "ร้านค้าของฉัน"} 
+        ownerName={user?.name || "เจ้าของร้าน"} 
+        onLogout={logout} 
       />
 
-      <main className="flex-1 py-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-extrabold text-gray-900 font-funnel tracking-tight">
-            สินค้าของฉัน
-          </h1>
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-black text-gray-900">สินค้าของฉัน</h1>
           <div className="flex items-center gap-2">
-            <button className="w-11 h-11 flex items-center justify-center bg-white border border-gray-200 text-gray-500 rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
-              <span className="material-symbols-outlined">settings</span>
+            <button className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition">
+              <span className="material-symbols-outlined text-gray-400">settings</span>
             </button>
-            <button className="h-11 px-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl shadow-lg shadow-green-200 transition-all flex items-center gap-2 text-sm sm:text-base">
-              <span className="material-symbols-outlined text-[20px]">add</span>
+            <button
+              onClick={() => navigate("/add-product")} // ✅ แก้ Path ให้ตรงกับ App.jsx
+              className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition shadow-sm shadow-green-200"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
               เพิ่มสินค้า
             </button>
           </div>
         </div>
 
-        <div className="bg-gray-100 p-1 rounded-2xl flex gap-1 shadow-inner border border-gray-200 overflow-x-auto no-scrollbar">
-          {['ทั้งหมด', 'กำลังขาย', 'หมดแล้ว'].map((tab) => (
+        {/* Tab bar */}
+        <div className="bg-gray-100 rounded-2xl p-1 flex gap-1 mb-6">
+          {TABS.map((tab) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`
-                flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold transition-all whitespace-nowrap
-                ${activeTab === tab 
-                  ? 'bg-white text-green-600 shadow-sm' 
-                  : 'text-gray-500 hover:text-gray-700'}
-              `}
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                activeTab === tab.key
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
             >
-              {tab}
-              <span className={`px-1.5 py-0.5 rounded-lg text-[10px] ${activeTab === tab ? 'bg-green-100' : 'bg-gray-200 text-gray-500'}`}>
-                {counts[tab]}
-              </span>
+              {tab.label} ({counts[tab.key]})
             </button>
           ))}
         </div>
 
-        {filteredProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-6 text-center bg-white rounded-3xl border border-dashed border-gray-200">
-            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-              <span className="material-symbols-outlined text-[48px] text-gray-300">storefront</span>
-            </div>
-            <h3 className="text-lg font-bold text-gray-800">ยังไม่มีสินค้า</h3>
-            <p className="text-gray-400 text-sm mt-1 mb-8 max-w-[240px]">
-              เริ่มต้นเพิ่มสินค้าแรกของคุณ เพื่อแสดงให้ลูกค้าในบริเวณใกล้เคียงเห็น
-            </p>
-            <button className="w-full max-w-xs h-12 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2">
-              <span className="material-symbols-outlined">add</span>
-              เพิ่มสินค้าเลย
-            </button>
+        {/* Loading State */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400">
+            <div className="w-8 h-8 border-3 border-green-200 border-t-green-500 rounded-full animate-spin" />
+            <p className="text-sm">กำลังโหลดสินค้า...</p>
           </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredProducts.map((product) => (
-              <div key={product.id} className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col h-full">
-                <div className="relative aspect-square overflow-hidden bg-gray-100">
-                  <img 
-                    src={product.image} 
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute top-3 right-3">
-                    <span className={`px-2 py-1 rounded-lg text-[10px] font-bold shadow-sm ${
-                      product.freshness === 'สด' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'
-                    }`}>
-                      {product.freshness} {Math.round(product.freshness_score * 100)}%
-                    </span>
-                  </div>
-                </div>
-                <div className="p-4 flex flex-col flex-1">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-gray-800 truncate mb-1">{product.name}</h3>
-                    <div className="flex items-baseline gap-1 text-green-600 font-funnel">
-                      <span className="text-lg font-extrabold">฿{product.price}</span>
-                      <span className="text-xs text-gray-400 font-medium">/{product.unit}</span>
-                    </div>
-                  </div>
-                  <button className="w-full mt-4 py-2 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors">
-                    แก้ไขสินค้า
-                  </button>
-                </div>
-              </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div className="flex flex-col items-center justify-center py-20 gap-2 text-red-400">
+            <p className="text-sm font-medium">{error}</p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && filtered.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 gap-2 text-gray-400">
+            <span className="text-5xl">🥬</span>
+            <p className="text-sm font-medium">ไม่มีสินค้าในหมวดนี้</p>
+          </div>
+        )}
+
+        {/* Product Grid */}
+        {!loading && !error && filtered.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-5">
+            {filtered.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onDelete={(id) => setDeleteId(id)}
+              />
             ))}
           </div>
         )}
-      </main>
+      </div>
+
+      {/* Delete Modal */}
+      {deleteId && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl text-center">
+             <h3 className="text-base font-bold text-gray-900 mb-2">ลบสินค้านี้?</h3>
+             <p className="text-sm text-gray-500 mb-6">การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+             <div className="flex gap-3">
+               <button onClick={() => setDeleteId(null)} className="flex-1 py-3 rounded-2xl border border-gray-200 text-sm font-semibold">ยกเลิก</button>
+               <button onClick={() => handleDelete(deleteId)} className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-bold">ลบสินค้า</button>
+             </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
