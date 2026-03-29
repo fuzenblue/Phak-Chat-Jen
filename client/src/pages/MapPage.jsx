@@ -1,70 +1,40 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, OverlayView } from '@react-google-maps/api';
 import { useNavigate } from 'react-router-dom';
 
-const MAP_CENTER = { lat: 13.7274, lng: 100.5230 }; // Khlong Toei
-
-const MOCK_SHOPS = [
-    {
-        id: 's-001',
-        name: 'ป้าแดงผักสดคลองเตย',
-        lat: 13.7274,
-        lng: 100.5230,
-        min_price: 25,
-        distance: '150ม.',
-        items_count: 5,
-        image_url: 'https://images.unsplash.com/photo-1488459711621-27bef697b055?q=80&w=200&auto=format&fit=crop'
-    },
-    {
-        id: 's-002',
-        name: 'สวนผักลุงสมบัติดี',
-        lat: 13.7290,
-        lng: 100.5250,
-        min_price: 15,
-        distance: '450ม.',
-        items_count: 8,
-        image_url: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?q=80&w=200&auto=format&fit=crop'
-    },
-    {
-        id: 's-003',
-        name: 'ร้านผักออร์แกนิก เจ๊พร',
-        lat: 13.7250,
-        lng: 100.5210,
-        min_price: 45,
-        distance: '600ม.',
-        items_count: 12,
-        image_url: 'https://images.unsplash.com/photo-1550143813-fdf696803212?q=80&w=200&auto=format&fit=crop'
-    },
-    {
-        id: 's-004',
-        name: 'กะหล่ำปลีสายน้ำผึ้ง',
-        lat: 13.7310,
-        lng: 100.5280,
-        min_price: 20,
-        distance: '1.2กม.',
-        items_count: 3,
-        image_url: 'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?q=80&w=200&auto=format&fit=crop'
-    },
-    {
-        id: 's-005',
-        name: 'ผักตลาดเช้ายิ้มสู้',
-        lat: 13.7230,
-        lng: 100.5260,
-        min_price: 12,
-        distance: '850ม.',
-        items_count: 6,
-        image_url: 'https://images.unsplash.com/photo-1488459711621-27bef697b055?q=80&w=200&auto=format&fit=crop'
-    }
-];
+import api from '../services/api';
 
 const RADIUS_OPTIONS = ['500ม.', '1กม.', '3กม.', 'ทั้งหมด'];
 
 export default function MapPage() {
     const navigate = useNavigate();
+    const [shops, setShops] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [zoom, setZoom] = useState(15);
     const [selectedRadius, setSelectedRadius] = useState('ทั้งหมด');
     const [search, setSearch] = useState('');
     const [map, setMap] = useState(null);
+    const [center, setCenter] = useState({ lat: 13.7274, lng: 100.5230 });
+
+    useEffect(() => {
+        const fetchShops = async () => {
+            try {
+                const response = await api.get('/v1/shops');
+                setShops(response.data.data);
+            } catch (err) {
+                console.error("Fetch shops failed:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchShops();
+
+        if (navigator.geolocation) {
+           navigator.geolocation.getCurrentPosition((pos) => {
+             setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+           });
+        }
+    }, []);
 
     // Bottom Sheet Height Logic
     const [snapIndex, setSnapIndex] = useState(1); // 0=collapsed, 1=half, 2=full
@@ -145,7 +115,7 @@ export default function MapPage() {
 
             <GoogleMap
                 mapContainerClassName="h-full w-full"
-                center={MAP_CENTER}
+                center={center}
                 zoom={zoom}
                 onLoad={onMapLoad}
                 options={{
@@ -156,7 +126,7 @@ export default function MapPage() {
                     ]
                 }}
             >
-                {MOCK_SHOPS.map(shop => (
+                {shops.map(shop => (
                     <OverlayView key={shop.id} position={{ lat: shop.lat, lng: shop.lng }} mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}>
                         <div onClick={() => onShopClick(shop.id)} className="relative flex flex-col items-center -translate-x-1/2 -translate-y-full cursor-pointer group">
                             <div className="w-10 h-10 bg-green-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -192,15 +162,17 @@ export default function MapPage() {
 
                     <div className="max-w-5xl mx-auto w-full px-6 pb-2 shrink-0">
                         <h2 className="text-xl font-extrabold text-gray-900 font-prompt">
-                            ร้านที่เปิดอยู่ใกล้คุณ <span className="text-green-500">({MOCK_SHOPS.length})</span>
+                            ร้านที่เปิดอยู่ใกล้คุณ <span className="text-green-500">({shops.length})</span>
                         </h2>
                     </div>
 
                     <div className="w-full flex-1 min-h-0 overflow-y-auto pb-10 px-10 overscroll-contain touch-pan-y custom-scrollbar">
                         <div className="w-full px-4 mx-4 divide-y divide-gray-50">
-                            {MOCK_SHOPS.map(shop => (
+                            {shops.length === 0 ? (
+                                <div className="py-10 text-center text-gray-400">ไม่พบร้านค้าในขณะนี้</div>
+                            ) : shops.map(shop => (
                                 <div key={shop.id} onClick={() => onShopClick(shop.id)} className="flex items-center gap-4 py-4 hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-colors px-2 rounded-2xl group">
-                                    <img src={shop.image_url} alt={shop.name} className="w-16 h-16 rounded-2xl object-cover bg-gray-100 shadow-sm group-hover:scale-105 transition-transform" />
+                                    <img src={shop.image_url || 'https://via.placeholder.com/150'} alt={shop.name} className="w-16 h-16 rounded-2xl object-cover bg-gray-100 shadow-sm group-hover:scale-105 transition-transform" />
                                     <div className="flex-1 min-w-0">
                                         <h3 className="font-bold text-[15px] text-gray-800 truncate leading-tight mb-0.5">
                                             {shop.name}
@@ -212,12 +184,12 @@ export default function MapPage() {
                                         </div>
                                     </div>
                                     <div className="px-4 flex flex-col items-end shrink-0 gap-2">
-                                        <span className="bg-green-500 text-white rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-wider">
-                                            เปิดอยู่
+                                        <span className={`${shop.is_open ? 'bg-green-500' : 'bg-gray-400'} text-white rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-wider`}>
+                                            {shop.is_open ? 'เปิดอยู่' : 'ปิดอยู่'}
                                         </span>
                                         <div className="flex items-center gap-0.5 text-gray-400">
                                             <span className="material-symbols-outlined text-[14px]">near_me</span>
-                                            <span className="text-[11px] font-bold font-funnel">{shop.distance}</span>
+                                            <span className="text-[11px] font-bold font-funnel">{shop.distance || 'N/A'}</span>
                                         </div>
                                     </div>
                                 </div>

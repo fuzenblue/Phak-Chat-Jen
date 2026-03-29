@@ -40,32 +40,21 @@ app.get('/api/health', async (req, res) => {
         const dbResult = await pool.query('SELECT NOW()');
         res.json({
             status: 'ok',
-            timestamp: new Date().toISOString(),
-            database: {
-                connected: true,
-                time: dbResult.rows[0].now,
-            },
-            services: {
-                qwen: !!process.env.QWEN_API_KEY,
-                googleMaps: !!process.env.GOOGLE_MAPS_API_KEY,
-                cloudinary: !!process.env.CLOUDINARY_CLOUD_NAME,
-            },
+            backend_api: 'Phak-Chat-Jen V1',
+            database: { connected: true, time: dbResult.rows[0].now },
         });
     } catch (error) {
-        res.json({
-            status: 'ok',
-            timestamp: new Date().toISOString(),
-            database: {
-                connected: false,
-                error: error.message,
-            },
-            services: {
-                qwen: !!process.env.QWEN_API_KEY,
-                googleMaps: !!process.env.GOOGLE_MAPS_API_KEY,
-                cloudinary: !!process.env.CLOUDINARY_CLOUD_NAME,
-            },
-        });
+        res.status(500).json({ status: 'error', database: { connected: false, error: error.message } });
     }
+});
+
+// ==================== 404 Handler ====================
+app.use((req, res) => {
+    console.warn(`[404] Route Not Found: ${req.method} ${req.url}`);
+    res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: `Route ${req.method} ${req.url} not found on this server.` }
+    });
 });
 
 // ==================== Error Handler ====================

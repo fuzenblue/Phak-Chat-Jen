@@ -1,40 +1,33 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios'; 
+import api from '../services/api'; 
 
 export default function LoginRegisterPage() {
     const navigate = useNavigate();
     const { login } = useAuth(); 
 
-    const [email, setEmail] = useState(''); // 2. เปลี่ยนจาก phone เป็น email
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showDemo, setShowDemo] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(''); // เพิ่มตัวแปรเก็บ error
+    const [error, setError] = useState(''); 
 
     async function handleSubmit(e) {
         e.preventDefault();
         setLoading(true);
         setError('');
-
-        console.log("--- [1] เริ่มการ Login ---");
-        console.log("Data to send:", { email, password: "******" });
         
         try {
-            // 3. เชื่อมต่อกับ Backend จริงๆ
-            const response = await axios.post('http://localhost:5000/api/auth/login', {
-                email: email, // ส่ง email ไป
+            const response = await api.post('auth/login', {
+                email: email,
                 password: password
             });
-            console.log("--- [2] Server ตอบกลับมาแล้ว! ---");
-            console.log("Status Code:", response.status);
-            console.log("Response Data:", response.data);
-            if (response.status === 200) {
-                // เก็บข้อมูลลง context
+            
+            if (response.data.token) {
                 login(response.data.user, response.data.token);
-                navigate('/dashboard');
+                navigate('/dashboard'); // Redirect to My Products
             }
         } catch (err) {
             console.error("--- [X] เกิดข้อผิดพลาด! ---");
