@@ -7,6 +7,7 @@ import postsRoutes from './routes/posts.js';
 import scansRoutes from './routes/scans.js';
 import uploadRoutes from './routes/upload.js';
 import pool from './config/database.js';
+import authRoutes from './routes/auth.js'; 
 
 dotenv.config();
 
@@ -32,7 +33,7 @@ app.use('/api/v1/shops',  shopsRoutes);
 app.use('/api/v1/posts',  postsRoutes);
 app.use('/api/v1/scans',  scansRoutes);
 app.use('/api/upload',    uploadRoutes);
-
+app.use('/api/auth', authRoutes);
 // ==================== Health Check ====================
 app.get('/api/health', async (req, res) => {
     try {

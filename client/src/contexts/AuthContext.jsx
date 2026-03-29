@@ -7,7 +7,6 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // load token from localStorage when app starts
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
@@ -17,6 +16,28 @@ export function AuthProvider({ children }) {
     }
     setLoading(false);
   }, []);
+
+  // --- เพิ่มส่วนนี้: ตัวดักจับการย้อนกลับ (popstate) ---
+  useEffect(() => {
+    const handleAuth = () => {
+      const isPublic = ['/login', '/map', '/register'].includes(window.location.pathname);
+      if (!localStorage.getItem('token') && !isPublic) {
+        window.location.replace('/login');
+      }
+    };
+    window.addEventListener('popstate', handleAuth);
+    return () => window.removeEventListener('popstate', handleAuth);
+  }, [token]);
+  // -------------------------------------------
+
+  useEffect(() => {
+    const publicPaths = ['/login', '/map', '/register']; 
+    const isPublicPath = publicPaths.includes(window.location.pathname);
+
+    if (!loading && !token && !isPublicPath) {
+      window.location.replace('/login'); // เปลี่ยนจาก .href เป็น .replace
+    }
+  }, [token, loading]);
 
   function login(userData, userToken) {
     setUser(userData);
@@ -30,6 +51,7 @@ export function AuthProvider({ children }) {
     setToken(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    window.location.replace('/login'); // เพิ่มบรรทัดนี้: บังคับเด้งออกและล้างประวัติ
   }
 
   return (
