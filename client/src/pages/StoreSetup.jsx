@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import MerchantNavbar from '../components/MerchantNavbar';
+import api from "../services/api";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const DAYS = [
   { key: "mon", label: "จันทร์" },
@@ -57,7 +60,11 @@ function Input({ value, onChange, placeholder, type = "text", className = "" }) 
 }
 
 function MiniMap({ lat, lng }) {
-  if (!lat || !lng) {
+  const parsedLat = parseFloat(lat);
+  const parsedLng = parseFloat(lng);
+  const isValid = !isNaN(parsedLat) && !isNaN(parsedLng);
+
+  if (!isValid) {
     return (
       <div className="flex flex-col items-center justify-center h-36 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-400 text-xs gap-2">
         <span className="material-symbols-outlined text-gray-300">location_off</span>
@@ -66,23 +73,30 @@ function MiniMap({ lat, lng }) {
     );
   }
 
-  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.005},${lat - 0.005},${lng + 0.005},${lat + 0.005}&layer=mapnik&marker=${lat},${lng}`;
+  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${parsedLng - 0.005},${parsedLat - 0.005},${parsedLng + 0.005},${parsedLat + 0.005}&layer=mapnik&marker=${parsedLat},${parsedLng}`;
 
   return (
     <div className="relative rounded-xl overflow-hidden border border-gray-200 h-40">
       <iframe title="mini-map" src={src} className="w-full h-full" style={{ border: 0 }} loading="lazy" />
       <div className="absolute bottom-2 left-2 bg-white/90 rounded-lg px-2 py-1 text-[10px] text-gray-600 font-mono shadow">
-        {lat.toFixed(5)}, {lng.toFixed(5)}
+        {parsedLat.toFixed(5)}, {parsedLng.toFixed(5)}
       </div>
     </div>
   );
 }
 
 export default function StoreSetup() {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  
   const [storeName, setStoreName] = useState("");
   const [storeDesc, setStoreDesc] = useState("");
-  const [storeImage, setStoreImage] = useState(null);
+  const [storeAddress, setStoreAddress] = useState("");
+  const [storeImage, setStoreImage] = useState(null); 
   const [storeImagePreview, setStoreImagePreview] = useState(null);
+  const [existingShopId, setExistingShopId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
 
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
@@ -99,16 +113,44 @@ export default function StoreSetup() {
   const fileRef = useRef();
 
   useEffect(() => {
+    const init = async () => {
+        try {
+            const res = await api.get('v1/shops/my-shop');
+            const s = res.data.data;
+            setStoreName(s.shop_name || "");
+            setStoreDesc(s.description || "");
+            setStoreAddress(s.shop_address || "");
+            setLat(s.latitude ? s.latitude.toString() : "");
+            setLng(s.longitude ? s.longitude.toString() : "");
+            setStoreImagePreview(s.image_url || null);
+            setExistingShopId(s.id);
+            if (s.opening_hours) {
+                setHours(s.opening_hours);
+            }
+        } catch (err) {
+            console.log("No existing shop found or error:", err);
+        } finally {
+            setPageLoading(false);
+        }
+    }
+    init();
+  }, []);
+
+  useEffect(() => {
     return () => {
-      if (storeImagePreview) URL.revokeObjectURL(storeImagePreview);
+      if (storeImagePreview && storeImagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(storeImagePreview);
+      }
     };
   }, [storeImagePreview]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (storeImagePreview) URL.revokeObjectURL(storeImagePreview);
     setStoreImage(file);
+    if (storeImagePreview && storeImagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(storeImagePreview);
+    }
     setStoreImagePreview(URL.createObjectURL(file));
   };
 
@@ -139,22 +181,69 @@ export default function StoreSetup() {
     setHours((prev) => ({ ...prev, [key]: { ...prev[key], [field]: val } }));
   };
 
-  const parsedLat = parseFloat(lat);
-  const parsedLng = parseFloat(lng);
-  const validCoords = !isNaN(parsedLat) && !isNaN(parsedLng);
+  const handleSave = async () => {
+    if (!storeName) return alert("กรุณาระบุชื่อร้าน");
+    setLoading(true);
+    try {
+      let shop_image_url = storeImagePreview; // default to existing if not changed
+
+      // 1. Upload to Cloudinary if new image selected
+      if (storeImage) {
+        const fd = new FormData();
+        fd.append('image', storeImage);
+        const upRes = await api.post('upload', fd, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        shop_image_url = upRes.data.url;
+      }
+
+      const payload = {
+        shop_name: storeName,
+        description: storeDesc,
+        shop_address: storeAddress,
+        shop_image_url,
+        latitude: parseFloat(lat),
+        longitude: parseFloat(lng),
+        opening_hours: hours
+      };
+
+      // 2. Save or Update shop
+      if (existingShopId) {
+        await api.patch(`v1/shops/${existingShopId}`, payload);
+      } else {
+        await api.post('v1/shops', payload);
+      }
+
+      alert("บันทึกข้อมูลร้านสำเร็จ");
+      navigate('/dashboard');
+    } catch (err) {
+      console.error(err);
+      alert("ไม่สามารถบันทึกข้อมูลร้านได้: " + (err.response?.data?.error?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (pageLoading) {
+    return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <span className="material-symbols-outlined animate-spin text-emerald-500 text-[40px]">progress_activity</span>
+        </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sarabun">
-      <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Prompt:wght@400;600&display=swap" rel="stylesheet" />
+    <div className="min-h-screen bg-gray-50 font-sarabun text-gray-800">
+      <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 
       <MerchantNavbar 
         shopName={storeName || "ชื่อร้านของคุณ"} 
-        ownerName="Merchant Admin" 
-        onLogout={() => console.log("Logout")} 
+        ownerName={user?.email || "Merchant Admin"} 
+        onLogout={logout} 
       />
 
-      <div className="max-w-lg mx-auto px-4 py-5 space-y-4">
+      <div className="max-w-lg mx-auto px-4 py-5 space-y-4 pt-16">
         <Card title="ข้อมูลร้าน" icon={<span className="material-symbols-outlined text-[20px]">storefront</span>}>
           <div className="space-y-4">
             <div>
@@ -172,6 +261,10 @@ export default function StoreSetup() {
               />
             </div>
             <div>
+              <Label>ที่อยู่ร้าน</Label>
+              <Input value={storeAddress} onChange={setStoreAddress} placeholder="เลขที่, ถนน, แขวง/ตำบล..." />
+            </div>
+            <div>
               <Label>รูปโปรไฟล์ร้าน</Label>
               <div onClick={() => fileRef.current.click()} className="flex items-center gap-4 cursor-pointer group">
                 <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-gray-200 group-hover:border-emerald-400 transition overflow-hidden bg-gray-50 flex items-center justify-center flex-shrink-0">
@@ -182,7 +275,7 @@ export default function StoreSetup() {
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-emerald-600">{storeImage ? "เปลี่ยนรูป" : "อัปโหลดรูป"}</p>
+                  <p className="text-sm font-medium text-emerald-600">{storeImagePreview ? "เปลี่ยนรูป" : "อัปโหลดรูป"}</p>
                   <p className="text-xs text-gray-400 mt-0.5">JPG, PNG ขนาดไม่เกิน 5MB</p>
                 </div>
               </div>
@@ -214,7 +307,8 @@ export default function StoreSetup() {
                 <Input value={lng} onChange={setLng} placeholder="100.5018" />
               </div>
             </div>
-            <MiniMap lat={validCoords ? parsedLat : null} lng={validCoords ? parsedLng : null} />
+            {locError && <p className="text-[10px] text-red-500">{locError}</p>}
+            <MiniMap lat={lat} lng={lng} />
           </div>
         </Card>
 
@@ -241,8 +335,13 @@ export default function StoreSetup() {
           </div>
         </Card>
 
-        <button className="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-emerald-100 text-sm mb-8">
-          บันทึกข้อมูลร้าน
+        <button 
+          onClick={handleSave}
+          disabled={loading}
+          className="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-emerald-100 text-sm mb-8 flex items-center justify-center gap-2"
+        >
+          {loading && <span className="animate-spin material-symbols-outlined text-[18px]">progress_activity</span>}
+          {existingShopId ? "อัปเดตข้อมูลร้าน" : "สร้างร้านค้า"}
         </button>
       </div>
     </div>

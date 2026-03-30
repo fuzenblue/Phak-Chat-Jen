@@ -21,11 +21,13 @@ router.post('/', requireAuth, upload.single('image'), async (req, res) => {
 
   try {
     // find shop of user
+    console.log(`[POST /v1/scans] Checking shop for user ${user_id}`);
     const shopResult = await pool.query('SELECT id FROM shops WHERE user_id = $1', [user_id]);
     if (shopResult.rows.length === 0) {
-      return res.status(404).json({
+      console.warn(`[POST /v1/scans] No shop found for user ${user_id}`);
+      return res.status(400).json({
         success: false,
-        error: { code: 'NOT_FOUND', message: 'ยังไม่มีร้านค้า' }
+        error: { code: 'SHOP_NOT_FOUND', message: 'กรุณาตั้งค่าร้านค้าก่อนใช้งานระบบนี้' }
       });
     }
     const shop_id = shopResult.rows[0].id;

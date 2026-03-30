@@ -11,11 +11,13 @@ router.get('/my-shop', requireAuth, async (req, res) => {
 
   try {
     // find shop of user
+    console.log(`[GET /v1/posts/my-shop] Fetching shop for user ${user_id}`);
     const shopResult = await pool.query('SELECT id FROM shops WHERE user_id = $1', [user_id]);
     if (shopResult.rows.length === 0) {
-      return res.status(404).json({
+      console.warn(`[GET /v1/posts/my-shop] No shop for user ${user_id}`);
+      return res.status(400).json({
         success: false,
-        error: { code: 'NOT_FOUND', message: 'ยังไม่มีร้านค้า' }
+        error: { code: 'SHOP_NOT_FOUND', message: 'กรุณาตั้งค่าร้านค้าก่อน' }
       });
     }
 

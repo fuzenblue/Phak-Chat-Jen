@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import api from "../services/api";
 
 const CATEGORIES = [
   { id: 1, emoji: "🥬", name: "ผักกาด", color: "#e8f5e9" },
@@ -37,10 +38,8 @@ const ProgressBar = ({ step, total }) => (
   </div>
 );
 
-const Step1 = ({ onNext }) => {
-  const [selected, setSelected] = useState(null);
+const Step1 = ({ onNext, selected, setSelected }) => {
   const [search, setSearch] = useState("");
-
   const filtered = CATEGORIES.filter(c => c.name.includes(search));
 
   return (
@@ -105,13 +104,14 @@ const Step1 = ({ onNext }) => {
   );
 };
 
-const Step2 = ({ onNext, onAnalyze }) => {
+const Step2 = ({ onAnalyze, selectedCat }) => {
   const [images, setImages] = useState([]);
   const [basePrice, setBasePrice] = useState("");
   const [unit, setUnit] = useState(UNITS[0]);
   const [showUnit, setShowUnit] = useState(false);
   const [days, setDays] = useState("");
   const [desc, setDesc] = useState("");
+  const [loading, setLoading] = useState(false);
   const fileRef = useRef();
 
   const handleFiles = useCallback((files) => {
@@ -129,16 +129,45 @@ const Step2 = ({ onNext, onAnalyze }) => {
   }, [handleFiles]);
 
   const removeImage = (id) => setImages(prev => prev.filter(i => i.id !== id));
-  const canAnalyze = images.length > 0 && basePrice && days;
+  const canAnalyze = images.length > 0 && basePrice && !loading;
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', images[0].file);
+      formData.append('veg_type', CATEGORIES.find(c => c.id === selectedCat).name);
+      formData.append('original_price', basePrice);
+
+      const response = await api.post('v1/scans', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      onAnalyze({ ...response.data.data, basePrice, unit });
+    } catch (err) {
+      if (err.response?.data?.error?.code === 'SHOP_NOT_FOUND') {
+        alert("กรุณาตั้งค่าร้านค้าก่อนใช้งานระบบสแกนครับ");
+        navigate('/dashboard/setup');
+        return;
+      }
+      console.error("Scan error:", err);
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || "เกิดข้อผิดพลาดในการวิเคราะห์รูปภาพ";
+      alert(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full overflow-y-auto pb-32">
       <div className="px-5 pt-3 space-y-5">
         <div>
-          <p className="text-sm font-semibold text-gray-700 mb-3">รูปสินค้า <span className="text-gray-400 font-normal">(สูงสุด 5 รูป)</span></p>
+          <p className="text-sm font-semibold text-gray-700 mb-3">รูปสินค้า {loading && "(กำลังอัปโหลด...)"}</p>
           {images.length === 0 ? (
             <div
-              onClick={() => fileRef.current.click()}
+              onClick={() => !loading && fileRef.current.click()}
               onDrop={handleDrop}
               onDragOver={e => e.preventDefault()}
               className="border-2 border-dashed border-green-200 rounded-2xl bg-green-50/40 flex flex-col items-center justify-center py-12 cursor-pointer hover:bg-green-50 transition-colors"
@@ -158,6 +187,7 @@ const Step2 = ({ onNext, onAnalyze }) => {
                     <div className="absolute top-1 left-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-lg font-medium">หลัก</div>
                   )}
                   <button
+                    disabled={loading}
                     onClick={() => removeImage(img.id)}
                     className="absolute top-1 right-1 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center"
                   >
@@ -165,17 +195,9 @@ const Step2 = ({ onNext, onAnalyze }) => {
                   </button>
                 </div>
               ))}
-              {images.length < 5 && (
-                <button
-                  onClick={() => fileRef.current.click()}
-                  className="aspect-square rounded-xl border-2 border-dashed border-green-200 bg-green-50 flex items-center justify-center hover:bg-green-100 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-green-400 text-[24px]">photo_camera</span>
-                </button>
-              )}
             </div>
           )}
-          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={e => handleFiles(e.target.files)} />
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFiles(e.target.files)} />
         </div>
 
         <div>
@@ -216,17 +238,6 @@ const Step2 = ({ onNext, onAnalyze }) => {
         </div>
 
         <div>
-          <p className="text-sm font-semibold text-gray-700 mb-2">วางขายมาแล้ว (วัน)</p>
-          <input
-            value={days}
-            onChange={e => setDays(e.target.value.replace(/\D/g, ""))}
-            placeholder="จำนวนวันที่วางขายมาแล้ว"
-            type="number"
-            className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-300"
-          />
-        </div>
-
-        <div>
           <p className="text-sm font-semibold text-gray-700 mb-2">รายละเอียดสินค้าเพิ่มเติม</p>
           <textarea
             value={desc}
@@ -240,7 +251,7 @@ const Step2 = ({ onNext, onAnalyze }) => {
 
       <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto px-5 pb-6 pt-3 bg-white/95 backdrop-blur-sm border-t border-gray-100">
         <button
-          onClick={() => canAnalyze && onAnalyze({ basePrice, unit, days, images })}
+          onClick={() => canAnalyze && handleSubmit()}
           disabled={!canAnalyze}
           className={`w-full py-4 font-semibold rounded-2xl flex items-center justify-center gap-2 transition-all ${
             canAnalyze
@@ -248,110 +259,98 @@ const Step2 = ({ onNext, onAnalyze }) => {
               : "bg-gray-100 text-gray-400 cursor-not-allowed"
           }`}
         >
-          <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
-          วิเคราะห์ด้วย AI
+          {loading ? (
+             <span className="animate-spin material-symbols-outlined text-[20px]">progress_activity</span>
+          ) : (
+            <>
+              <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
+              วิเคราะห์ด้วย AI
+            </>
+          )}
         </button>
       </div>
     </div>
   );
 };
 
-const Step3 = ({ data, onConfirm }) => {
-  const [finalPrice, setFinalPrice] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState(null);
+const Step3 = ({ scanResult, onConfirm }) => {
+  const [finalPrice, setFinalPrice] = useState(scanResult?.recommended_price || "");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const daysNum = parseInt(data.days) || 0;
-      const price = parseInt(data.basePrice) || 50;
-      const freshScore = Math.max(10, Math.min(95, 90 - daysNum * 1.5));
-      const recommended = Math.round(price * (freshScore / 100));
-      let condition = "";
-      let conditionColor = "";
-      if (freshScore >= 80) {
-        condition = "ผักสดใหม่มาก เหมาะสำหรับวางขายในราคาตั้งต้น";
-        conditionColor = "text-green-700";
-      } else if (freshScore >= 50) {
-        condition = "ผักยังสดดี ราคาเหมาะสมกับคุณภาพ";
-        conditionColor = "text-yellow-700";
-      } else {
-        condition = `ผักเริ่มเหี่ยว ควรเร่งขายวันนี้ (วางขายมาแล้ว ${data.days} วัน)`;
-        conditionColor = "text-orange-700";
-      }
-      setResult({ freshScore: Math.round(freshScore), recommended, condition, conditionColor });
-      setFinalPrice(String(recommended));
+  const handlePost = async () => {
+    setLoading(true);
+    try {
+      await api.post('v1/posts', {
+        scan_id: scanResult.scan_id,
+        price: finalPrice,
+        original_price: scanResult.original_price,
+        expired_at: new Date(Date.now() + scanResult.estimated_shelf_life_days * 24 * 60 * 60 * 1000).toISOString()
+      });
+      onConfirm();
+    } catch (err) {
+      console.error("Post error:", err);
+      alert("ไม่สามารถลงขายสินค้าได้");
+    } finally {
       setLoading(false);
-    }, 2200);
-    return () => clearTimeout(timer);
-  }, [data.days, data.basePrice]);
+    }
+  };
 
-  const scoreColor = result
-    ? result.freshScore >= 80 ? "#22c55e" : result.freshScore >= 50 ? "#eab308" : "#f97316"
-    : "#22c55e";
+  const scoreColor = scanResult.freshness_score >= 75 ? "#22c55e" : scanResult.freshness_score >= 50 ? "#eab308" : "#f97316";
 
   return (
     <div className="flex flex-col h-full overflow-y-auto pb-32">
       <div className="px-5 pt-3 space-y-4">
         <p className="text-base font-bold text-gray-800">ผลการวิเคราะห์ AI</p>
-        {loading ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col items-center justify-center gap-4 min-h-48">
-            <div className="w-12 h-12 rounded-full border-4 border-green-100 border-t-green-500 animate-spin" />
-            <div className="text-center">
-              <p className="text-sm font-semibold text-gray-700">AI กำลังวิเคราะห์...</p>
+        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+          <div className="flex gap-4">
+            <img src={scanResult.image_url} alt="" className="w-24 h-24 rounded-xl object-cover flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold text-gray-500">ความสด</span>
+                <span className="text-xl font-bold" style={{ color: scoreColor }}>{scanResult.freshness_score}/100</span>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
+                <div className="h-full transition-all duration-1000" style={{ width: `${scanResult.freshness_score}%`, background: scoreColor }} />
+              </div>
+              <div className="bg-blue-50 rounded-xl p-2.5">
+                <p className="text-xs leading-relaxed text-blue-700">{scanResult.ai_summary}</p>
+              </div>
             </div>
           </div>
-        ) : (
-          <>
-            <div className="bg-white rounded-2xl border border-gray-100 p-4">
-              <div className="flex gap-4">
-                {data.images?.[0] && (
-                  <img src={data.images[0].url} alt="" className="w-24 h-24 rounded-xl object-cover flex-shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold text-gray-500">ความสด</span>
-                    <span className="text-xl font-bold" style={{ color: scoreColor }}>{result.freshScore}/100</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
-                    <div className="h-full transition-all duration-1000" style={{ width: `${result.freshScore}%`, background: scoreColor }} />
-                  </div>
-                  <div className="bg-blue-50 rounded-xl p-2.5">
-                    <p className={`text-xs leading-relaxed ${result.conditionColor}`}>{result.condition}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
-              <p className="text-sm font-bold text-gray-800">ราคาแนะนำ</p>
-              <div className="flex items-center justify-between py-2.5 bg-green-50 -mx-4 px-4 rounded-xl">
-                <span className="text-sm text-gray-600">ราคาแนะนำจาก AI</span>
-                <span className="text-lg font-bold text-green-600">฿{result.recommended}</span>
-              </div>
-              <div className="relative mt-2">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">฿</span>
-                <input
-                  value={finalPrice}
-                  onChange={e => setFinalPrice(e.target.value)}
-                  type="number"
-                  className="w-full pl-7 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-300"
-                />
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-      {!loading && (
-        <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto px-5 pb-6 pt-3 bg-white/95 backdrop-blur-sm border-t border-gray-100">
-          <button
-            onClick={() => onConfirm(finalPrice)}
-            className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-2xl shadow-lg shadow-green-200 flex items-center justify-center gap-2 active:scale-98"
-          >
-            <span className="material-symbols-outlined text-[20px]">check_circle</span>
-            ยืนยันและลงขายสินค้า
-          </button>
         </div>
-      )}
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
+          <p className="text-sm font-bold text-gray-800">ราคาแนะนำ</p>
+          <div className="flex items-center justify-between py-2.5 bg-green-50 -mx-4 px-4 rounded-xl">
+            <span className="text-sm text-gray-600">ราคาแนะนำ (ลด {scanResult.recommended_discount_percent}%)</span>
+            <span className="text-lg font-bold text-green-600">฿{scanResult.recommended_price}</span>
+          </div>
+          <div className="relative mt-2">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">฿</span>
+            <input
+              value={finalPrice}
+              onChange={e => setFinalPrice(e.target.value)}
+              type="number"
+              className="w-full pl-7 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-300"
+            />
+          </div>
+        </div>
+      </div>
+      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto px-5 pb-6 pt-3 bg-white/95 backdrop-blur-sm border-t border-gray-100">
+        <button
+          onClick={handlePost}
+          disabled={loading}
+          className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-2xl shadow-lg shadow-green-200 flex items-center justify-center gap-2 active:scale-98"
+        >
+          {loading ? (
+             <span className="animate-spin material-symbols-outlined text-[20px]">progress_activity</span>
+          ) : (
+            <>
+              <span className="material-symbols-outlined text-[20px]">check_circle</span>
+              ยืนยันและลงขายสินค้า
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 };
@@ -376,12 +375,13 @@ const Step4 = ({ onReset }) => (
 
 export default function AddProduct() {
   const [step, setStep] = useState(1);
-  const [productData, setProductData] = useState({});
+  const [selectedCat, setSelectedCat] = useState(null);
+  const [scanResult, setScanResult] = useState(null);
 
   const handleBack = () => { if (step > 1) setStep(s => s - 1); };
-  const handleAnalyze = (data) => { setProductData(data); setStep(3); };
+  const handleAnalyze = (result) => { setScanResult(result); setStep(3); };
   const handleConfirm = () => setStep(4);
-  const handleReset = () => { setStep(1); setProductData({}); };
+  const handleReset = () => { setStep(1); setSelectedCat(null); setScanResult(null); };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-start justify-center font-sans">
@@ -401,9 +401,9 @@ export default function AddProduct() {
           </div>
         )}
         <div className="flex-1 overflow-hidden flex flex-col">
-          {step === 1 && <Step1 onNext={() => setStep(2)} />}
-          {step === 2 && <Step2 onNext={() => setStep(3)} onAnalyze={handleAnalyze} />}
-          {step === 3 && <Step3 data={productData} onConfirm={handleConfirm} />}
+          {step === 1 && <Step1 onNext={() => setStep(2)} selected={selectedCat} setSelected={setSelectedCat} />}
+          {step === 2 && <Step2 onAnalyze={handleAnalyze} selectedCat={selectedCat} />}
+          {step === 3 && <Step3 scanResult={scanResult} onConfirm={handleConfirm} />}
           {step === 4 && <Step4 onReset={handleReset} />}
         </div>
       </div>

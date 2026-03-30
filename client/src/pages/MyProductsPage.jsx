@@ -4,41 +4,6 @@ import MerchantNavbar from "../components/MerchantNavbar";
 import ProductCard from "../components/ProductCard";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
-
-// ─── Mock data สำหรับแสดงผล ───────────────────────
-const MOCK_PRODUCTS = [
-  {
-    id: "1",
-    name: "ผักกาดขาว",
-    category: "ผักกาด",
-    price: 30,
-    salePrice: null,
-    freshnessScore: 92,
-    imageUrl: "https://images.unsplash.com/photo-1597362925123-77861d3fbac7?w=400&q=80",
-    isActive: true,
-  },
-  {
-    id: "2",
-    name: "มะเขือเทศราชินี",
-    category: "มะเขือเทศ",
-    price: 40,
-    salePrice: 32,
-    freshnessScore: 75,
-    imageUrl: "https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=400&q=80",
-    isActive: true,
-  },
-  {
-    id: "3",
-    name: "Chickpea",
-    category: "ถั่ว",
-    price: 25,
-    salePrice: 15,
-    freshnessScore: 58,
-    imageUrl: "https://images.unsplash.com/photo-1515543904379-3d757afe72e4?w=400&q=80",
-    isActive: true,
-  },
-];
-
 const TABS = [
   { key: "all",     label: "ทั้งหมด" },
   { key: "selling", label: "กำลังขาย" },
@@ -67,11 +32,29 @@ export default function MyProductsPage() {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        // จำลองการโหลดข้อมูล 0.6 วินาที
-        await new Promise((r) => setTimeout(r, 600)); 
-        setProducts(MOCK_PRODUCTS);
+        const response = await api.get('v1/posts/my-shop');
+        
+        // Map backend data to frontend format
+        const mappedData = response.data.data.map(p => ({
+          id: p.id,
+          name: p.scan.veg_type,
+          category: p.scan.veg_type,
+          price: p.original_price,
+          salePrice: parseFloat(p.price) < parseFloat(p.original_price) ? p.price : null,
+          freshnessScore: p.scan.freshness_score,
+          imageUrl: p.scan.image_url,
+          isActive: p.status === 'active',
+          aiSummary: p.scan.ai_summary
+        }));
+
+        setProducts(mappedData);
       } catch (err) {
-        setError("ไม่สามารถโหลดข้อมูลสินค้าได้");
+        if (err.response?.data?.error?.code === 'SHOP_NOT_FOUND') {
+          navigate('/dashboard/setup');
+          return;
+        }
+        const msg = err.response?.data?.error?.message || "ไม่สามารถโหลดข้อมูลสินค้าได้";
+        setError(msg);
         console.error(err);
       } finally {
         setLoading(false);
@@ -106,8 +89,14 @@ export default function MyProductsPage() {
   };
 
   const handleDelete = async (id) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    setDeleteId(null);
+    try {
+      await api.delete(`/v1/posts/${id}`);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      setDeleteId(null);
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("ไม่สามารถลบสินค้าได้");
+    }
   };
 
   return (
@@ -116,8 +105,8 @@ export default function MyProductsPage() {
 
       {/* ✅ เชื่อม Navbar เข้ากับ AuthContext เรียบร้อย */}
       <MerchantNavbar 
-        shopName={user?.shopName || "ร้านค้าของฉัน"} 
-        ownerName={user?.name || "เจ้าของร้าน"} 
+        shopName={"ร้านค้าของฉัน"} 
+        ownerName={user?.email || "เจ้าของร้าน"} 
         onLogout={logout} 
       />
 
