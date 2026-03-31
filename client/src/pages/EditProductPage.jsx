@@ -80,7 +80,7 @@ export default function EditProductPage() {
       setSaving(true);
       const payload = { price: Number(salePrice), status: isActive ? 'active' : 'soldout' };
       await api.patch(`/v1/posts/${id}`, payload);
-      navigate(-1);
+      navigate("/dashboard");
     } catch (err) {
       alert("บันทึกไม่สำเร็จ กรุณาลองใหม่");
     } finally {
@@ -199,7 +199,8 @@ export default function EditProductPage() {
               <input
                 type="number"
                 value={salePrice}
-                onChange={(e) => setSalePrice(e.target.value)}
+                onChange={(e) => setSalePrice(Math.min(Number(e.target.value) || 0, product.price).toString())}
+                max={product.price}
                 className="w-full border border-gray-200 rounded-xl pl-8 pr-4 py-3 text-sm focus:ring-2 focus:ring-green-400 outline-none bg-gray-50"
               />
             </div>
@@ -208,6 +209,9 @@ export default function EditProductPage() {
                 ลด {Math.round((1 - currentSalePrice / product.price) * 100)}% จากราคาเต็ม
               </p>
             )}
+            <p className="text-xs text-red-500 font-medium mt-1.5">
+              สามารถใส่ราคาเท่าเดิมหรือต่ำกว่านั้น
+            </p>
           </div>
         </SectionCard>
 
