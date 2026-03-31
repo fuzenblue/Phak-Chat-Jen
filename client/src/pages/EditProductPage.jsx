@@ -3,20 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import MerchantNavbar from "../components/MerchantNavbar";
 import FreshnessBar from "../components/FreshnessBar";
 import StatusBadge, { scoreToBadgeType } from "../components/StatusBadge";
-import { getFreshnessAdvice } from "./MyProductsPage";
 import api from "../services/api";
-
-const MOCK_DETAIL = {
-  id: "1",
-  name: "ผักกาดขาว",
-  category: "ผักกาด",
-  price: 30,
-  salePrice: 30,
-  freshnessScore: 92,
-  imageUrl: "https://images.unsplash.com/photo-1597362925123-77861d3fbac7?w=600&q=80",
-  isActive: true,
-  aiAdvice: "ผักกาดขาวสดใหม่มาก ใบเขียวสวาย ไม่มีรอยช้ำ ควรขายได้ดีภายใน 3-4 วัน",
-};
 
 function Toggle({ checked, onChange }) {
   return (
@@ -62,12 +49,23 @@ export default function EditProductPage() {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        // const { data } = await api.get(`/merchant/products/${id}`);
-        await new Promise((r) => setTimeout(r, 500));
-        const data = MOCK_DETAIL;
-        setProduct(data);
-        setSalePrice(String(data.salePrice ?? data.price));
-        setIsActive(data.isActive);
+        const { data } = await api.get(`/v1/posts/${id}`);
+        const productData = data.data || data;
+        const mappedProduct = {
+          id: productData.id,
+          name: productData.scan.veg_type,
+          category: productData.scan.veg_type,
+          price: productData.original_price,
+          salePrice: parseFloat(productData.price) < parseFloat(productData.original_price) ? productData.price : null,
+          freshnessScore: productData.scan.freshness_score,
+          imageUrl: productData.scan.image_url,
+          isActive: productData.status === 'active',
+          aiAdvice: productData.scan.ai_summary,
+          quantity: productData.quantity
+        };
+        setProduct(mappedProduct);
+        setSalePrice(String(mappedProduct.salePrice ?? mappedProduct.price));
+        setIsActive(mappedProduct.isActive);
       } catch (err) {
         setError("ไม่สามารถโหลดข้อมูลสินค้าได้");
       } finally {
@@ -80,9 +78,8 @@ export default function EditProductPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const payload = { salePrice: Number(salePrice), isActive };
-      // await api.patch(`/merchant/products/${id}`, payload);
-      await new Promise((r) => setTimeout(r, 700));
+      const payload = { price: Number(salePrice), status: isActive ? 'active' : 'soldout' };
+      await api.patch(`/v1/posts/${id}`, payload);
       navigate(-1);
     } catch (err) {
       alert("บันทึกไม่สำเร็จ กรุณาลองใหม่");
@@ -93,8 +90,8 @@ export default function EditProductPage() {
 
   const handleDelete = async () => {
     try {
-      // await api.delete(`/merchant/products/${id}`);
-      navigate("/merchant/products");
+      await api.delete(`/v1/posts/${id}`);
+      navigate("/dashboard");
     } catch (err) {
       console.error(err);
     }
@@ -124,7 +121,7 @@ export default function EditProductPage() {
   }
 
   const badgeType = isActive ? scoreToBadgeType(product.freshnessScore) : "soldout";
-  const aiAdvice = product.aiAdvice ?? getFreshnessAdvice(product.freshnessScore);
+  const aiAdvice = product.aiAdvice ?? "สินค้าสดใหม่ แนะนำให้รีบขาย";
   const currentSalePrice = Number(salePrice);
   const hasDiscount = currentSalePrice < product.price && currentSalePrice > 0;
 

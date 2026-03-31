@@ -15,7 +15,7 @@ export default function StoreDetailPage() {
       try {
         setLoading(true);
         const response = await api.get(`v1/shops/${id}`);
-        setShop(response.data.data);
+        setShop(response.data.data || response.data);
       } catch (err) {
         console.error("Fetch shop failed:", err);
         setError("ไม่สามารถโหลดข้อมูลร้านค้าได้");
@@ -39,8 +39,14 @@ export default function StoreDetailPage() {
   };
 
   const handleNavigate = () => {
-    if (shop) {
-      window.open(`https://www.google.com/maps?q=${shop.latitude},${shop.longitude}`, '_blank');
+    if (shop && shop.latitude && shop.longitude) {
+      const url = `https://www.google.com/maps/search/?api=1&query=${shop.latitude},${shop.longitude}`;
+      window.open(url, '_blank');
+      const now = new Date().toLocaleTimeString('th-TH');
+      console.log(`[${now}] Redirecting to Google Maps for: ${shop.shop_name}`);
+    } else {
+      alert("ขออภัย ไม่พบพิกัดของร้านค้าในขณะนี้");
+      console.warn("⚠️ พิกัดร้านไม่ครบถ้วน ไม่สามารถเปิดแผนที่ได้");
     }
   };
 

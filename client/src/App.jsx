@@ -11,6 +11,7 @@ import MyProductsPage from './pages/MyProductsPage';
 import StoreDetailPage from './pages/StoreDetailPage';
 import StoreSetup from './pages/StoreSetup';
 import AddProduct from './pages/AddProduct';
+import EditProductPage from './pages/EditProductPage';
 
 const App = () => {
   return (
@@ -32,7 +33,7 @@ const App = () => {
                     <Route path="/chat" element={<ChatPage />} />
                     
                     <Route path="/shops/:id" element={<StoreDetailPage />} />
-                    
+                    <Route path="/merchant/products/:id/edit" element={<EditProductPage />} />
                     <Route path="/dashboard" element={<MyProductsPage />} />
                     <Route path="/dashboard/setup" element={<StoreSetup />} />
                                       
