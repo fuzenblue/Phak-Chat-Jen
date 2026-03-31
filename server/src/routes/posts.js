@@ -93,6 +93,67 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
+// GET /posts/:id — get single post
+router.get('/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const user_id = req.user.id;
+
+  try {
+    // check owner
+    const check = await pool.query(
+      `SELECT p.id FROM posts p
+       JOIN shops s ON p.shop_id = s.id
+       WHERE p.id = $1 AND s.user_id = $2`,
+      [id, user_id]
+    );
+    if (check.rows.length === 0) {
+      return res.status(403).json({
+        success: false,
+        error: { code: 'FORBIDDEN', message: 'ไม่มีสิทธิ์ดู post นี้' }
+      });
+    }
+
+    const result = await pool.query(
+      `SELECT p.*, 
+             vs.image_url as scan_image_url, vs.veg_type, vs.freshness_score, vs.ai_raw_output
+      FROM posts p
+      LEFT JOIN vegetable_scans vs ON p.scan_id = vs.id
+      WHERE p.id = $1`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'ไม่พบ post' }
+      });
+    }
+
+    const p = result.rows[0];
+
+    const post = {
+      id: p.id,
+      original_price: p.original_price,
+      price: p.price,
+      status: p.status,
+      expired_at: p.expired_at,
+      created_at: p.created_at,
+      scan: {
+        image_url: p.scan_image_url,
+        veg_type: p.veg_type,
+        freshness_score: p.freshness_score,
+        freshness_label: getFreshnessLabel(p.freshness_score),
+        ai_summary: p.ai_raw_output?.summary ?? null,
+      }
+    };
+
+    res.json({ success: true, data: post });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: err.message } });
+  }
+});
+
 // PATCH /posts/:id — edit post
 router.patch('/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
