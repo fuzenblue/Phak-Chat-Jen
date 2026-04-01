@@ -107,13 +107,9 @@ const Step1 = ({ onNext, selected, setSelected }) => {
   );
 };
 
-const Step2 = ({ onAnalyze, selectedCat }) => {
+const Step2 = ({ onAnalyze, selectedCat, images, setImages, basePrice, setBasePrice, unit, setUnit, desc, setDesc }) => {
   const navigate = useNavigate(); // ✅ ดึง navigate มาใช้
-  const [images, setImages] = useState([]);
-  const [basePrice, setBasePrice] = useState("");
-  const [unit, setUnit] = useState(UNITS[0]);
   const [showUnit, setShowUnit] = useState(false);
-  const [desc, setDesc] = useState("");
   const [loading, setLoading] = useState(false);
   const fileRef = useRef();
 
@@ -435,11 +431,15 @@ export default function AddProduct() {
   const [step, setStep] = useState(1);
   const [selectedCat, setSelectedCat] = useState(null);
   const [scanResult, setScanResult] = useState(null);
+  const [images, setImages] = useState([]);
+  const [basePrice, setBasePrice] = useState("");
+  const [unit, setUnit] = useState(UNITS[0]);
+  const [desc, setDesc] = useState("");
 
   const handleBack = () => { if (step > 1) setStep(s => s - 1); };
   const handleAnalyze = (result) => { setScanResult(result); setStep(3); };
   const handleConfirm = () => setStep(4);
-  const handleReset = () => { setStep(1); setSelectedCat(null); setScanResult(null); };
+  const handleReset = () => { setStep(1); setSelectedCat(null); setScanResult(null); setImages([]); setBasePrice(""); setUnit(UNITS[0]); setDesc(""); };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-start justify-center font-sans">
@@ -460,7 +460,7 @@ export default function AddProduct() {
         )}
         <div className="flex-1 overflow-hidden flex flex-col">
           {step === 1 && <Step1 onNext={() => setStep(2)} selected={selectedCat} setSelected={setSelectedCat} />}
-          {step === 2 && <Step2 onAnalyze={handleAnalyze} selectedCat={selectedCat} />}
+          {step === 2 && <Step2 onAnalyze={handleAnalyze} selectedCat={selectedCat} images={images} setImages={setImages} basePrice={basePrice} setBasePrice={setBasePrice} unit={unit} setUnit={setUnit} desc={desc} setDesc={setDesc} />}
           {step === 3 && <Step3 scanResult={scanResult} onConfirm={handleConfirm} />}
           {step === 4 && <Step4 onReset={handleReset} />}
         </div>
