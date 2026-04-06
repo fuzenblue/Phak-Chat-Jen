@@ -82,6 +82,84 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
+// GET /shops/nearby — get shops nearby
+router.get('/nearby', async (req, res) => {
+  const { lat, lng, radius, veg_type } = req.query;
+
+  // validate params
+  if (!lat || !lng || !radius) {
+    return res.status(422).json({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: 'กรุณาระบุ lat, lng และ radius' }
+    });
+  }
+
+  try {
+    // PostGIS query — get shops in radius + get min_price and preview_image
+    let query = `
+      SELECT 
+        s.id,
+        s.shop_name,
+        s.image_url as shop_image_url,
+        s.latitude,
+        s.longitude,
+        s.opening_hours,
+        s.rating,
+        ROUND(ST_Distance(
+          s.location::geography,
+          ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography
+        )) AS distance_meters,
+        MIN(p.price) AS min_price,
+        COUNT(p.id) AS post_count,
+        (
+          SELECT vs.image_url 
+          FROM posts p2
+          JOIN vegetable_scans vs ON p2.scan_id = vs.id
+          WHERE p2.shop_id = s.id 
+            AND p2.status = 'active'
+            ${veg_type ? `AND vs.veg_type ILIKE $4` : ''}
+          LIMIT 1
+        ) AS preview_image_url
+      FROM shops s
+      LEFT JOIN posts p ON p.shop_id = s.id AND p.status = 'active'
+      WHERE ST_DWithin(
+        s.location::geography,
+        ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
+        $3
+      )
+      GROUP BY s.id
+      ORDER BY distance_meters ASC
+    `;
+
+    const values = [parseFloat(lat), parseFloat(lng), parseInt(radius)];
+    if (veg_type) values.push(`%${veg_type}%`);
+
+    const result = await pool.query(query, values);
+
+    // filter isOpenNow in JS
+    const shops = result.rows
+      .filter(s => isOpenNow(s.opening_hours))
+      .map(s => ({
+        id: s.id,
+        shop_name: s.shop_name,
+        shop_image_url: s.shop_image_url,
+        latitude: s.latitude,
+        longitude: s.longitude,
+        distance_meters: parseInt(s.distance_meters),
+        is_open_now: true,
+        rating: s.rating,
+        min_price: s.min_price ? parseFloat(s.min_price) : null,
+        post_count: parseInt(s.post_count),
+        preview_image_url: s.preview_image_url ?? s.shop_image_url,
+      }));
+
+    res.json({ success: true, data: shops });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: err.message } });
+  }
+});
+
 // GET /shops/:id — get shop data with posts
 router.get('/:id', async (req, res) => {
   const { id } = req.params;

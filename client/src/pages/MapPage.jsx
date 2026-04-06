@@ -172,7 +172,7 @@ export default function MapPage() {
                                 <div className="py-10 text-center text-gray-400">ไม่พบร้านค้าในขณะนี้</div>
                             ) : shops.map(shop => (
                                 <div key={shop.id} onClick={() => onShopClick(shop.id)} className="flex items-center gap-4 py-4 hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-colors px-2 rounded-2xl group">
-                                    <img src={shop.image_url || 'https://via.placeholder.com/150'} alt={shop.name} className="w-16 h-16 rounded-2xl object-cover bg-gray-100 shadow-sm group-hover:scale-105 transition-transform" />
+                                    <img src={shop.image_url || 'https://placehold.co/150x150/e8f5e9/4caf50?text=🌿'} alt={shop.name} className="w-16 h-16 rounded-2xl object-cover bg-gray-100 shadow-sm group-hover:scale-105 transition-transform" />
                                     <div className="flex-1 min-w-0">
                                         <h3 className="font-bold text-[15px] text-gray-800 truncate leading-tight mb-0.5">
                                             {shop.name}
