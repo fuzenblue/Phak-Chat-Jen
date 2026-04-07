@@ -90,10 +90,10 @@ export default function StoreDetailPage() {
         <section className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 space-y-5">
           <div className="flex gap-4">
             <img 
-              src={shop.image_url || 'https://images.unsplash.com/photo-1488459711621-27bef697b055?q=80&w=200&auto=format&fit=crop'} 
+              src={shop.image_url || 'https://placehold.co/200x200/e8f5e9/4caf50?text=🌿'} 
               alt={shop.shop_name} 
               className="w-20 h-20 rounded-2xl object-cover shadow-sm bg-gray-100 shrink-0"
-              onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1488459711621-27bef697b055?q=80&w=200&auto=format&fit=crop' }}
+              onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/200x200/e8f5e9/4caf50?text=🌿' }}
             />
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-start mb-1">
