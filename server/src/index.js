@@ -7,7 +7,11 @@ import postsRoutes from './routes/posts.js';
 import scansRoutes from './routes/scans.js';
 import uploadRoutes from './routes/upload.js';
 import pool from './config/database.js';
-import authRoutes from './routes/auth.js'; 
+import authRoutes from './routes/auth.js';
+import agentRoutes from './routes/agent.js';
+
+
+import { startAgentLoop } from './agent/loop.js';
 
 dotenv.config();
 
@@ -28,12 +32,12 @@ app.use((req, res, next) => {
 
 // ==================== Routes ====================
 app.use('/api/maps', mapsRoutes);
+app.use('/api/v1/shops', shopsRoutes);
+app.use('/api/v1/posts', postsRoutes);
+app.use('/api/v1/scans', scansRoutes);
 app.use('/api/upload', uploadRoutes);
-app.use('/api/v1/shops',  shopsRoutes);
-app.use('/api/v1/posts',  postsRoutes);
-app.use('/api/v1/scans',  scansRoutes);
-app.use('/api/upload',    uploadRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/v1/agent', agentRoutes);
 // ==================== Health Check ====================
 app.get('/api/health', async (req, res) => {
     try {
@@ -65,6 +69,9 @@ app.use((err, req, res, next) => {
         message: process.env.NODE_ENV === 'development' ? err.message : undefined,
     });
 });
+
+// ==================== Agent Loop ====================
+startAgentLoop();
 
 // ==================== Start Server ====================
 app.listen(PORT, () => {

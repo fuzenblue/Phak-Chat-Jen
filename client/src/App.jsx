@@ -11,6 +11,8 @@ import MyProductsPage from './pages/MyProductsPage';
 import StoreDetailPage from './pages/StoreDetailPage';
 import StoreSetup from './pages/StoreSetup';
 import AddProduct from './pages/AddProduct';
+import AgentSettingsPage from './pages/AgentSettingsPage';
+import AgentActivityPage from './pages/AgentActivityPage';
 
 const App = () => {
   return (
@@ -37,6 +39,8 @@ const App = () => {
                     <Route path="/dashboard/setup" element={<StoreSetup />} />
                                       
                     <Route path="/add-product" element={<AddProduct />} />
+                    <Route path="/dashboard/agent" element={<AgentSettingsPage />} />
+                    <Route path="/dashboard/agent/activity" element={<AgentActivityPage />} />
                   </Routes>
                 </div>
               </div>
