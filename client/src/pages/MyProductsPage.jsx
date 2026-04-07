@@ -124,22 +124,25 @@ export default function MyProductsPage() {
       />
 
       <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-black text-gray-900">สินค้าของฉัน</h1>
-          <div className="flex items-center gap-2">
-            
 
-            <button 
-              onClick={() => navigate("/dashboard/setup")} 
+        {/* ─── Header Row ─── */}
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h1 className="text-2xl font-black text-gray-900">สินค้าของฉัน</h1>
+            {!loading && !error && (
+              <p className="text-sm text-gray-400 mt-0.5">{counts.all} รายการทั้งหมด</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate("/dashboard/setup")}
               className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition"
               title="ตั้งค่าร้านค้า"
             >
               <span className="material-symbols-outlined text-gray-400">settings</span>
             </button>
-
-
             <button
-              onClick={() => navigate("/add-product")} 
+              onClick={() => navigate("/add-product")}
               className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition shadow-sm shadow-green-200"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -150,7 +153,7 @@ export default function MyProductsPage() {
           </div>
         </div>
 
-        {/* Tab Switcher */}
+        {/* ─── Tab Switcher ─── */}
         <div className="bg-gray-100 rounded-2xl p-1 flex gap-1 mb-6">
           {TABS.map((tab) => (
             <button

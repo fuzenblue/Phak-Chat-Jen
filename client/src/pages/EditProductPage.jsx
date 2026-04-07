@@ -42,6 +42,7 @@ export default function EditProductPage() {
   const [error, setError] = useState(null);
 
   const [salePrice, setSalePrice] = useState("");
+  const [quantity, setQuantity] = useState(1);
   const [isActive, setIsActive] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -65,6 +66,7 @@ export default function EditProductPage() {
         };
         setProduct(mappedProduct);
         setSalePrice(String(mappedProduct.salePrice ?? mappedProduct.price));
+        setQuantity(mappedProduct.quantity ?? 1);
         setIsActive(mappedProduct.isActive);
       } catch (err) {
         setError("ไม่สามารถโหลดข้อมูลสินค้าได้");
@@ -78,7 +80,7 @@ export default function EditProductPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const payload = { price: Number(salePrice), status: isActive ? 'active' : 'soldout' };
+      const payload = { price: Number(salePrice), status: isActive ? 'active' : 'soldout', quantity: Number(quantity) };
       await api.patch(`/v1/posts/${id}`, payload);
       navigate("/dashboard");
     } catch (err) {
@@ -212,6 +214,19 @@ export default function EditProductPage() {
             <p className="text-xs text-red-500 font-medium mt-1.5">
               สามารถใส่ราคาเท่าเดิมหรือต่ำกว่านั้น
             </p>
+          </div>
+          <div className="mt-4">
+            <label className="block text-sm font-semibold text-gray-600 mb-2">จำนวนคงเหลือ</label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(0, Number(e.target.value)))}
+                className="w-full border border-gray-200 rounded-xl pl-4 pr-10 py-3 text-sm focus:ring-2 focus:ring-green-400 outline-none bg-gray-50"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">ชิ้น</span>
+            </div>
           </div>
         </SectionCard>
 

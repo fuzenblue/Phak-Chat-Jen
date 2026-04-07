@@ -90,6 +90,8 @@ export default function StoreSetup() {
   const { user, logout } = useAuth();
   
   const [storeName, setStoreName] = useState("");
+  const [savedShopName, setSavedShopName] = useState(""); // ใช้แสดงใน navbar (อัปเดตเฉพาะหลังบันทึก)
+  const modalRef = useRef();
   const [storeDesc, setStoreDesc] = useState("");
   const [storeAddress, setStoreAddress] = useState("");
   const [storeImage, setStoreImage] = useState(null); 
@@ -118,6 +120,7 @@ export default function StoreSetup() {
             const res = await api.get('v1/shops/my-shop');
             const s = res.data.data;
             setStoreName(s.shop_name || "");
+            setSavedShopName(s.shop_name || "");
             setStoreDesc(s.description || "");
             setStoreAddress(s.shop_address || "");
             setLat(s.latitude ? s.latitude.toString() : "");
@@ -214,8 +217,8 @@ export default function StoreSetup() {
         await api.post('v1/shops', payload);
       }
 
-      alert("บันทึกข้อมูลร้านสำเร็จ");
-      navigate('/dashboard');
+      setSavedShopName(storeName);
+      modalRef.current?.showModal();
     } catch (err) {
       console.error(err);
       alert("ไม่สามารถบันทึกข้อมูลร้านได้: " + (err.response?.data?.error?.message || err.message));
@@ -238,7 +241,7 @@ export default function StoreSetup() {
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 
       <MerchantNavbar 
-        shopName={storeName || "ชื่อร้านของคุณ"} 
+        shopName={savedShopName || "ชื่อร้านของคุณ"} 
         ownerName={user?.email || "Merchant Admin"} 
         onLogout={logout} 
       />
@@ -344,6 +347,34 @@ export default function StoreSetup() {
           {existingShopId ? "อัปเดตข้อมูลร้าน" : "สร้างร้านค้า"}
         </button>
       </div>
+
+      {/* ─── Success Modal ─── */}
+      <dialog ref={modalRef} className="modal">
+        <div className="modal-box text-center">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+              <span className="material-symbols-outlined text-emerald-500 text-[36px]">check_circle</span>
+            </div>
+          </div>
+          <h3 className="font-bold text-lg text-gray-900">
+            {existingShopId ? "อัปเดตร้านสำเร็จ!" : "สร้างร้านสำเร็จ!"}
+          </h3>
+          <p className="text-sm text-gray-500 mt-1 mb-6">
+            {existingShopId ? "ข้อมูลร้านของคุณถูกบันทึกแล้ว" : `ยินดีต้อนรับ! ร้าน "${savedShopName}" พร้อมใช้งานแล้ว`}
+          </p>
+          <div className="modal-action justify-center">
+            <button
+              className="btn btn-success text-white font-bold px-8"
+              onClick={() => { modalRef.current?.close(); navigate('/dashboard'); }}
+            >
+              ไปหน้าสินค้า
+            </button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
     </div>
   );
 }

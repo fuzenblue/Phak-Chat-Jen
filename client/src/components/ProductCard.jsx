@@ -51,7 +51,7 @@ export default function ProductCard({ product, onDelete, onEdit }) {
           <FreshnessBar score={product.freshnessScore} />
         </div>
 
-        {/* ราคา */}
+        {/* ราคา + จำนวนคงเหลือ */}
         <div className="mt-3 flex items-baseline gap-2 flex-wrap">
           <span className="text-xl font-bold text-green-600">
             ฿{hasDiscount ? product.salePrice : product.price}
@@ -63,6 +63,14 @@ export default function ProductCard({ product, onDelete, onEdit }) {
             </>
           )}
         </div>
+        {product.quantity != null && (
+          <div className={`mt-1.5 inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-lg ${
+            product.quantity <= 3 ? 'bg-orange-50 text-orange-500' : 'bg-gray-100 text-gray-500'
+          }`}>
+            <span className="material-symbols-outlined text-[13px]">inventory_2</span>
+            คงเหลือ {product.quantity} ชิ้น
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex items-center gap-2 mt-4">
