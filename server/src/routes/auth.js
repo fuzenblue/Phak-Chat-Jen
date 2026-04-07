@@ -43,9 +43,17 @@ router.post("/register", async (req, res) => {
       [email, hashedPassword, role]
     );
 
+    // 5) Generate JWT token so the client can log in immediately
+    const token = jwt.sign(
+      { id: rows[0].id, email: rows[0].email, role: rows[0].role },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
     return res.status(201).json({
       message: "สมัครสมาชิกสำเร็จ",
       user: rows[0],
+      token,
     });
   } catch (error) {
     console.error("[POST /register]", error);
