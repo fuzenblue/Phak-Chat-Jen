@@ -279,7 +279,8 @@ const Step2 = ({ onAnalyze, selectedCat, images, setImages, basePrice, setBasePr
 
 const Step3 = ({ scanResult, onConfirm }) => {
   const [finalPrice, setFinalPrice] = useState(scanResult?.recommended_price || scanResult?.basePrice || "");
-  const [quantity, setQuantity] = useState(1); 
+  const [quantity, setQuantity] = useState(1);
+  const [rating, setRating] = useState(0);
   const [loading, setLoading] = useState(false);
   const handlePost = async () => {
     setLoading(true);
@@ -291,7 +292,8 @@ const Step3 = ({ scanResult, onConfirm }) => {
         scan_id: scanResult.id || scanResult.scan_id,
         price: Number(finalPrice),
         original_price: Number(scanResult.basePrice),
-        quantity: Number(quantity), // 👈 ต้องมีบรรทัดนี้ ส่งไปเป็นตัวเลข
+        quantity: Number(quantity),
+        rating: rating > 0 ? rating : null,
         expired_at: expiredAt,
         status: 'active'
       };
@@ -365,6 +367,29 @@ const Step3 = ({ scanResult, onConfirm }) => {
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-xs">ชิ้น</span>
             </div>
+          </div>
+
+          {/* ─── Rating ─── */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 mb-2">ให้คะแนนสินค้า (ไม่บังคับ)</p>
+            <div className="rating rating-lg gap-1">
+              {[1,2,3,4,5].map(star => (
+                <input
+                  key={star}
+                  type="radio"
+                  name="product-rating"
+                  className="mask mask-star-2 bg-amber-400"
+                  checked={rating === star}
+                  onChange={() => setRating(star)}
+                  aria-label={`${star} stars`}
+                />
+              ))}
+            </div>
+            {rating > 0 && (
+              <button type="button" onClick={() => setRating(0)} className="text-xs text-gray-400 underline mt-1">
+                ล้างคะแนน
+              </button>
+            )}
           </div>
 
         </div>

@@ -54,7 +54,8 @@ export default function MyProductsPage() {
           imageUrl: p.scan.image_url,
           isActive: p.status === 'active',
           aiSummary: p.scan.ai_summary,
-          quantity: p.quantity // ดึงจำนวนสินค้ามาแสดง
+          quantity: p.quantity,
+          rating: p.rating ?? null
         }));
 
         setProducts(mappedData);

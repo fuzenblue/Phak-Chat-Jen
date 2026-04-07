@@ -67,7 +67,7 @@ router.get('/my-shop', requireAuth, async (req, res) => {
 
 // POST /posts — post product
 router.post('/', requireAuth, async (req, res) => {
-  const { scan_id, price, original_price, expired_at, quantity } = req.body;
+  const { scan_id, price, original_price, expired_at, quantity, rating } = req.body;
   const user_id = req.user.id;
 
   try {
@@ -82,9 +82,9 @@ router.post('/', requireAuth, async (req, res) => {
     const shop_id = shopResult.rows[0].id;
 
     const result = await pool.query(
-      `INSERT INTO posts (scan_id, shop_id, price, original_price, expired_at, quantity)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [scan_id, shop_id, price, original_price, expired_at, quantity ?? 1]
+      `INSERT INTO posts (scan_id, shop_id, price, original_price, expired_at, quantity, rating)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [scan_id, shop_id, price, original_price, expired_at, quantity ?? 1, rating ?? null]
     );
 
     res.status(201).json({ success: true, data: result.rows[0] });
@@ -138,6 +138,7 @@ router.get('/:id', requireAuth, async (req, res) => {
       price: p.price,
       status: p.status,
       quantity: p.quantity,
+      rating: p.rating ?? null,
       expired_at: p.expired_at,
       created_at: p.created_at,
       scan: {
@@ -159,7 +160,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 // PATCH /posts/:id — edit post
 router.patch('/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const { price, status, quantity } = req.body;
+  const { price, status, quantity, rating } = req.body;
   const user_id = req.user.id;
 
   try {
@@ -184,6 +185,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
     if (price !== undefined)    { fields.push(`price=$${i++}`);    values.push(price); }
     if (status !== undefined)   { fields.push(`status=$${i++}`);   values.push(status); }
     if (quantity !== undefined) { fields.push(`quantity=$${i++}`); values.push(quantity); }
+    if (rating !== undefined)   { fields.push(`rating=$${i++}`);   values.push(rating); }
 
     if (fields.length === 0) {
       return res.status(422).json({
