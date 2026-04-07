@@ -21,7 +21,11 @@ async function runAgentLoop() {
     );
 
     for (const policy of policies) {
-      await processShop(policy);
+      try {
+        await processShop(policy);
+      } catch (err) {
+        console.error(`[Agent] shop error (shop_id=${policy.shop_id}):`, err.message);
+      }
     }
   } catch (err) {
     console.error('[Agent] loop error:', err.message);
