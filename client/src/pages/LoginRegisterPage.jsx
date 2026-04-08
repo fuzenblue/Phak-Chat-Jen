@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api'; 
-import api from '../services/api'; 
+
 
 export default function LoginRegisterPage() {
     const navigate = useNavigate();
@@ -24,8 +24,7 @@ export default function LoginRegisterPage() {
     const [regRole, setRegRole] = useState('customer');
 
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(''); 
-    const [error, setError] = useState(''); 
+    const [error, setError] = useState('');
 
     async function handleLogin(e) {
         e.preventDefault();
@@ -61,16 +60,23 @@ export default function LoginRegisterPage() {
         setError('');
 
         try {
-            const response = await api.post('auth/register', {
+            // Step 1: Register (server returns { message, user } — no token)
+            await api.post('auth/register', {
                 email: regEmail,
                 password: regPassword,
                 role: regRole,
             });
 
-            if (response.data.token) {
-                login(response.data.user, response.data.token);
+            // Step 2: Auto-login to obtain token
+            const loginRes = await api.post('auth/login', {
+                email: regEmail,
+                password: regPassword,
+            });
+
+            if (loginRes.data.token) {
+                login(loginRes.data.user, loginRes.data.token);
                 if (regRole === 'merchant') {
-                    navigate('/dashboard');
+                    navigate('/dashboard/setup');
                 } else {
                     navigate('/');
                 }

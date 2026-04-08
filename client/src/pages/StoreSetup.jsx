@@ -95,6 +95,7 @@ export default function StoreSetup() {
   const [storeImage, setStoreImage] = useState(null); 
   const [storeImagePreview, setStoreImagePreview] = useState(null);
   const [existingShopId, setExistingShopId] = useState(null);
+  const [savedShopName, setSavedShopName] = useState("");
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
 
@@ -111,6 +112,7 @@ export default function StoreSetup() {
   );
 
   const fileRef = useRef();
+  const successModalRef = useRef();
 
   useEffect(() => {
     const init = async () => {
@@ -124,6 +126,7 @@ export default function StoreSetup() {
             setLng(s.longitude ? s.longitude.toString() : "");
             setStoreImagePreview(s.image_url || null);
             setExistingShopId(s.id);
+            setSavedShopName(s.shop_name || "");
             if (s.opening_hours) {
                 setHours(s.opening_hours);
             }
@@ -214,8 +217,8 @@ export default function StoreSetup() {
         await api.post('v1/shops', payload);
       }
 
-      alert("บันทึกข้อมูลร้านสำเร็จ");
-      navigate('/dashboard');
+      setSavedShopName(storeName);
+      successModalRef.current?.showModal();
     } catch (err) {
       console.error(err);
       alert("ไม่สามารถบันทึกข้อมูลร้านได้: " + (err.response?.data?.error?.message || err.message));
@@ -237,8 +240,32 @@ export default function StoreSetup() {
       <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 
+      {/* DaisyUI Modal - บันทึกร้านสำเร็จ */}
+      <dialog ref={successModalRef} className="modal">
+        <div className="modal-box flex flex-col items-center gap-4 rounded-3xl">
+          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+            <span className="material-symbols-outlined text-emerald-500 text-[36px]">check_circle</span>
+          </div>
+          <h3 className="text-xl font-bold text-gray-800">ตั้งค่าเรียบร้อยแล้ว!</h3>
+          <p className="text-sm text-gray-500 text-center">
+            ร้าน <span className="font-semibold text-emerald-600">{savedShopName}</span> ได้รับการบันทึกเรียบร้อยแล้ว
+          </p>
+          <div className="modal-action w-full">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="btn w-full bg-emerald-500 hover:bg-emerald-600 text-white border-none rounded-2xl"
+            >
+              ไปหน้า Dashboard
+            </button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>ปิด</button>
+        </form>
+      </dialog>
+
       <MerchantNavbar 
-        shopName={storeName || "ชื่อร้านของคุณ"} 
+        shopName={savedShopName || "ชื่อร้านของคุณ"} 
         ownerName={user?.email || "Merchant Admin"} 
         onLogout={logout} 
       />

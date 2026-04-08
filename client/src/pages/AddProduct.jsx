@@ -42,7 +42,6 @@ const ProgressBar = ({ step, total }) => (
 );
 
 const Step1 = ({ onNext, selected, setSelected }) => {
-const Step1 = ({ onNext, selected, setSelected }) => {
   const [search, setSearch] = useState("");
   const filtered = CATEGORIES.filter(c => c.name.includes(search));
 
@@ -170,10 +169,8 @@ const Step2 = ({ onAnalyze, selectedCat, images, setImages, basePrice, setBasePr
       <div className="px-5 pt-3 space-y-5">
         <div>
           <p className="text-sm font-semibold text-gray-700 mb-3">รูปสินค้า {loading && "(กำลังอัปโหลด...)"}</p>
-          <p className="text-sm font-semibold text-gray-700 mb-3">รูปสินค้า {loading && "(กำลังอัปโหลด...)"}</p>
           {images.length === 0 ? (
             <div
-              onClick={() => !loading && fileRef.current.click()}
               onClick={() => !loading && fileRef.current.click()}
               onDrop={handleDrop}
               onDragOver={e => e.preventDefault()}
@@ -194,7 +191,6 @@ const Step2 = ({ onAnalyze, selectedCat, images, setImages, basePrice, setBasePr
                     <div className="absolute top-1 left-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-lg font-medium">หลัก</div>
                   )}
                   <button
-                    disabled={loading}
                     disabled={loading}
                     onClick={() => removeImage(img.id)}
                     className="absolute top-1 right-1 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center"
@@ -275,14 +271,6 @@ const Step2 = ({ onAnalyze, selectedCat, images, setImages, basePrice, setBasePr
               วิเคราะห์ด้วย AI
             </>
           )}
-          {loading ? (
-             <span className="animate-spin material-symbols-outlined text-[20px]">progress_activity</span>
-          ) : (
-            <>
-              <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
-              วิเคราะห์ด้วย AI
-            </>
-          )}
         </button>
       </div>
     </div>
@@ -317,10 +305,7 @@ const Step3 = ({ scanResult, onConfirm }) => {
       setLoading(false);
     }
   };
-    }
-  };
 
-  const scoreColor = scanResult.freshness_score >= 75 ? "#22c55e" : scanResult.freshness_score >= 50 ? "#eab308" : "#f97316";
   const scoreColor = scanResult.freshness_score >= 75 ? "#22c55e" : scanResult.freshness_score >= 50 ? "#eab308" : "#f97316";
 
   return (
@@ -452,7 +437,6 @@ export default function AddProduct() {
   const [desc, setDesc] = useState("");
 
   const handleBack = () => { if (step > 1) setStep(s => s - 1); };
-  const handleAnalyze = (result) => { setScanResult(result); setStep(3); };
   const handleAnalyze = (result) => { setScanResult(result); setStep(3); };
   const handleConfirm = () => setStep(4);
   const handleReset = () => { setStep(1); setSelectedCat(null); setScanResult(null); setImages([]); setBasePrice(""); setUnit(UNITS[0]); setDesc(""); };
