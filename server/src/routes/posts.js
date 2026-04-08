@@ -67,7 +67,7 @@ router.get('/my-shop', requireAuth, async (req, res) => {
 
 // POST /posts — post product
 router.post('/', requireAuth, async (req, res) => {
-  const { scan_id, price, original_price, expired_at } = req.body;
+  const { scan_id, price, original_price, quantity, expired_at } = req.body;
   const user_id = req.user.id;
 
   try {
@@ -82,9 +82,9 @@ router.post('/', requireAuth, async (req, res) => {
     const shop_id = shopResult.rows[0].id;
 
     const result = await pool.query(
-      `INSERT INTO posts (scan_id, shop_id, price, original_price, expired_at)
-       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-      [scan_id, shop_id, price, original_price, expired_at]
+      `INSERT INTO posts (scan_id, shop_id, price, original_price, quantity, expired_at)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [scan_id, shop_id, price, original_price, quantity ?? 1, expired_at]
     );
 
     res.status(201).json({ success: true, data: result.rows[0] });

@@ -12,6 +12,7 @@ export default function EditProductPage() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   
   const [salePrice, setSalePrice] = useState("");
   const [quantity, setQuantity] = useState(""); 
@@ -61,9 +62,7 @@ export default function EditProductPage() {
 
       // ยิง PATCH ไปที่ API ของเพื่อน
       await api.patch(`v1/posts/${id}`, payload);
-      
-      alert("อัปเดตข้อมูลในระบบเรียบร้อย!");
-      navigate(-1); // พอกลับไปหน้า Dashboard มันจะดึงข้อมูลใหม่ที่อัปเดตแล้วมาโชว์
+      setShowSuccess(true);
     } catch (err) {
       console.error("Error saving product:", err);
       alert("บันทึกไม่สำเร็จ กรุณาเช็คการเชื่อมต่อ API");
@@ -87,6 +86,29 @@ export default function EditProductPage() {
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] font-['Sarabun'] pb-12">
+
+      {/* DaisyUI v5 Success Modal */}
+      <dialog className={`modal ${showSuccess ? 'modal-open' : ''}`}>
+        <div className="modal-box text-center rounded-3xl">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <span className="material-symbols-outlined text-4xl text-green-500">check_circle</span>
+            </div>
+          </div>
+          <h3 className="text-xl font-black text-gray-900 mb-2">บันทึกสำเร็จ!</h3>
+          <p className="text-gray-400 text-sm mb-6">อัปเดตข้อมูลสินค้าในระบบเรียบร้อยแล้ว</p>
+          <button
+            onClick={() => { setShowSuccess(false); navigate(-1); }}
+            className="btn btn-success text-white w-full rounded-xl font-bold"
+          >
+            กลับหน้าสินค้า
+          </button>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button onClick={() => setShowSuccess(false)}>close</button>
+        </form>
+      </dialog>
+
       <MerchantNavbar shopName={product?.shop_name || "ร้านของคุณ"} />
 
       <main className="max-w-6xl mx-auto px-4 py-8">
