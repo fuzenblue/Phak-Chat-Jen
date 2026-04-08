@@ -104,7 +104,6 @@ router.get('/nearby', async (req, res) => {
         s.latitude,
         s.longitude,
         s.opening_hours,
-        s.rating,
         ROUND(ST_Distance(
           s.location::geography,
           ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography
@@ -147,7 +146,6 @@ router.get('/nearby', async (req, res) => {
         longitude: s.longitude,
         distance_meters: parseInt(s.distance_meters),
         is_open_now: true,
-        rating: s.rating,
         min_price: s.min_price ? parseFloat(s.min_price) : null,
         post_count: parseInt(s.post_count),
         preview_image_url: s.preview_image_url ?? s.shop_image_url,
