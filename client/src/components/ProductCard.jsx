@@ -40,6 +40,25 @@ export default function ProductCard({ product, onDelete }) {
         {/* Freshness bar */}
         <FreshnessBar score={product.freshnessScore} />
 
+        {/* จำนวนคงเหลือ */}
+        <div className="mt-2 flex items-center gap-1.5">
+          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zm-9-4h2a2 2 0 012 2v2H7V5a2 2 0 012-2z" />
+          </svg>
+          <span className="text-xs text-gray-500">
+            คงเหลือ{" "}
+            <span className={`font-semibold ${
+              product.quantity == null ? "text-gray-400" :
+              product.quantity === 0 ? "text-red-500" :
+              product.quantity <= 5 ? "text-orange-500" :
+              "text-gray-700"
+            }`}>
+              {product.quantity == null ? "-" : product.quantity}
+            </span>
+            {" "}
+          </span>
+        </div>
+
         {/* ราคา */}
         <div className="mt-3 flex items-baseline gap-2 flex-wrap">
           <span className="text-xl font-bold text-green-600">

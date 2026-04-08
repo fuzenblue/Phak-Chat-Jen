@@ -45,6 +45,7 @@ router.get('/my-shop', requireAuth, async (req, res) => {
       id: p.id,
       original_price: p.original_price,
       price: p.price,
+      quantity: p.quantity,
       status: p.status,
       expired_at: p.expired_at,
       created_at: p.created_at,
@@ -93,10 +94,58 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
+// GET /posts/:id — get single post
+router.get('/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const user_id = req.user.id;
+
+  try {
+    const result = await pool.query(
+      `SELECT p.*,
+              vs.image_url as scan_image_url, vs.veg_type, vs.freshness_score, vs.ai_raw_output,
+              s.shop_name
+       FROM posts p
+       LEFT JOIN vegetable_scans vs ON p.scan_id = vs.id
+       LEFT JOIN shops s ON p.shop_id = s.id
+       WHERE p.id = $1 AND s.user_id = $2`,
+      [id, user_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'ไม่พบสินค้า หรือไม่มีสิทธิ์เข้าถึง' }
+      });
+    }
+
+    const p = result.rows[0];
+    res.json({
+      success: true,
+      data: {
+        id: p.id,
+        name: p.veg_type,
+        image: p.scan_image_url,
+        price: p.price,
+        original_price: p.original_price,
+        recommended_price: p.original_price,
+        quantity: p.quantity,
+        status: p.status,
+        freshness_score: p.freshness_score,
+        expired_at: p.expired_at,
+        shop_name: p.shop_name,
+        ai_summary: p.ai_raw_output?.summary ?? null,
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: err.message } });
+  }
+});
+
 // PATCH /posts/:id — edit post
 router.patch('/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const { price, status } = req.body;
+  const { price, quantity, status } = req.body;
   const user_id = req.user.id;
 
   try {
@@ -118,8 +167,9 @@ router.patch('/:id', requireAuth, async (req, res) => {
     const values = [];
     let i = 1;
 
-    if (price !== undefined)  { fields.push(`price=$${i++}`);  values.push(price); }
-    if (status !== undefined) { fields.push(`status=$${i++}`); values.push(status); }
+    if (price !== undefined)    { fields.push(`price=$${i++}`);    values.push(price); }
+    if (quantity !== undefined) { fields.push(`quantity=$${i++}`); values.push(quantity); }
+    if (status !== undefined)   { fields.push(`status=$${i++}`);   values.push(status); }
 
     if (fields.length === 0) {
       return res.status(422).json({

@@ -363,7 +363,7 @@ const Step3 = ({ scanResult, onConfirm }) => {
                 placeholder="จำนวน"
                 className="w-full pl-4 pr-8 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-300"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-xs">ชิ้น</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-xs"></span>
             </div>
           </div>
 
@@ -420,7 +420,7 @@ const Step4 = ({ onReset }) => {
           onClick={onReset}
           className="w-full py-4 bg-white border border-gray-200 text-gray-600 font-semibold rounded-2xl shadow-sm hover:bg-gray-50"
         >
-          เพิ่มสินค้าใหม่อีกชิ้น
+          เพิ่มสินค้าใหม่
         </button>
       </div>
     </div>
@@ -436,7 +436,8 @@ export default function AddProduct() {
   const [unit, setUnit] = useState(UNITS[0]);
   const [desc, setDesc] = useState("");
 
-  const handleBack = () => { if (step > 1) setStep(s => s - 1); };
+  const navigate = useNavigate();
+  const handleBack = () => { if (step > 1) setStep(s => s - 1); else navigate('/dashboard'); };
   const handleAnalyze = (result) => { setScanResult(result); setStep(3); };
   const handleConfirm = () => setStep(4);
   const handleReset = () => { setStep(1); setSelectedCat(null); setScanResult(null); setImages([]); setBasePrice(""); setUnit(UNITS[0]); setDesc(""); };
