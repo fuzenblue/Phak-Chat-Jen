@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, OverlayView } from '@react-google-maps/api';
 import { useNavigate } from 'react-router-dom';
+import CustomerNavbar from '../components/CustomerNavbar';
 
 import api from '../services/api';
 
@@ -66,18 +67,7 @@ export default function MapPage() {
 
     return (
         <div className="relative h-screen w-full overflow-hidden font-prompt">
-            <div className="absolute inset-x-0 top-0 z-20 pointer-events-none">
-                <div className="bg-white border-b border-gray-100 shadow-sm pointer-events-auto">
-                    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-green-500 text-[22px]">eco</span>
-                            <span className="font-semibold text-green-600 text-sm">ผักชัดเจน</span>
-                        </div>
-                        <span className="font-semibold text-gray-800 text-sm">แผนที่ร้านค้า</span>
-                        <button onClick={() => navigate('/login')} className="border border-green-500 text-green-500 rounded-full text-xs px-3 py-1 hover:bg-green-50 transition-colors">เข้าสู่ระบบ</button>
-                    </div>
-                </div>
-            </div>
+            <CustomerNavbar title="แผนที่ร้านค้า" />
 
             <div className="absolute inset-x-0 top-14 z-10 pointer-events-none">
                 <div className="max-w-5xl mx-auto px-4 pt-4 relative">

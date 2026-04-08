@@ -20,6 +20,7 @@ const App = () => {
       <Router>
         <Routes>
           {/* Fullscreen Pages (No restriction in App.jsx) */}
+          <Route path="/" element={<HomePage />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="/login" element={<LoginRegisterPage />} />
           
@@ -30,7 +31,6 @@ const App = () => {
               <div className="min-h-screen bg-gray-50">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-24">
                   <Routes>
-                    <Route path="/" element={<HomePage />} />
                     <Route path="/chat" element={<ChatPage />} />
                     
                     <Route path="/shops/:id" element={<StoreDetailPage />} />

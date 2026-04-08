@@ -9,7 +9,7 @@ export default function CustomerNavbar({ title, back = false }) {
   return (
     <nav className="fixed top-0 left-0 right-0 z-20 bg-white border-b border-gray-100 shadow-sm h-14 font-prompt">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
-        <div className="w-1/3 flex justify-start">
+        <button onClick={() => navigate('/')} className="w-1/3 flex justify-start">
           {back ? (
             <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-gray-500 hover:text-green-600 transition-colors">
               <span className="material-symbols-outlined text-[20px]">arrow_back</span>
@@ -21,7 +21,7 @@ export default function CustomerNavbar({ title, back = false }) {
               <span className="font-bold text-green-600 text-[13px] sm:text-sm tracking-tight truncate">ผักชัดเจน</span>
             </div>
           )}
-        </div>
+        </button>
 
         <div className="w-1/3 flex justify-center overflow-hidden px-2">
             <h1 className="font-bold text-gray-800 text-sm truncate whitespace-nowrap">
