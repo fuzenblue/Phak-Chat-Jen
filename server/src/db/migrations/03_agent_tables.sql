@@ -4,7 +4,10 @@ CREATE TABLE IF NOT EXISTS users (
   email         VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   role          VARCHAR(50)  NOT NULL DEFAULT 'merchant',
-  created_at    TIMESTAMPTZ  NOT NULL DEFAULT now()
+  display_name  TEXT,
+  avatar_url    TEXT,
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ DEFAULT now()
 );
 
 -- Shops
@@ -53,3 +56,4 @@ CREATE TABLE IF NOT EXISTS favorites (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(user_id, shop_id)
 );
+
