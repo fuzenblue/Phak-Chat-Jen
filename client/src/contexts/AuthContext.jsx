@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -10,11 +11,27 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
+    
+    const initializeAuth = async () => {
+      if (savedToken && savedUser) {
+        setToken(savedToken);
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+
+        try {
+          // Sync fresh profile data from DB softly
+          const res = await api.get('/auth/me');
+          const fullUser = { ...parsedUser, ...res.data.data };
+          setUser(fullUser);
+          localStorage.setItem('user', JSON.stringify(fullUser));
+        } catch (err) {
+          console.error("Failed to fresh sync user:", err);
+        }
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   // --- เพิ่มส่วนนี้: ตัวดักจับการย้อนกลับ (popstate) ---
@@ -54,8 +71,16 @@ export function AuthProvider({ children }) {
     window.location.replace('/login'); // เพิ่มบรรทัดนี้: บังคับเด้งออกและล้างประวัติ
   }
 
+  function updateUser(newData) {
+    setUser(prev => {
+      const updated = { ...prev, ...newData };
+      localStorage.setItem('user', JSON.stringify(updated));
+      return updated;
+    });
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
