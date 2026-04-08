@@ -1,49 +1,88 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios'; 
+import api from '../services/api'; 
 
 export default function LoginRegisterPage() {
     const navigate = useNavigate();
     const { login } = useAuth(); 
 
-    const [email, setEmail] = useState(''); // 2. เปลี่ยนจาก phone เป็น email
+    const [tab, setTab] = useState('login'); // 'login' | 'register'
+
+    // Login state
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showDemo, setShowDemo] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(''); // เพิ่มตัวแปรเก็บ error
 
-    async function handleSubmit(e) {
+    // Register state
+    const [regEmail, setRegEmail] = useState('');
+    const [regPassword, setRegPassword] = useState('');
+    const [regConfirm, setRegConfirm] = useState('');
+    const [showRegPassword, setShowRegPassword] = useState(false);
+    const [regRole, setRegRole] = useState('customer');
+
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(''); 
+
+    async function handleLogin(e) {
         e.preventDefault();
         setLoading(true);
         setError('');
-
-        console.log("--- [1] เริ่มการ Login ---");
-        console.log("Data to send:", { email, password: "******" });
         
         try {
-            // 3. เชื่อมต่อกับ Backend จริงๆ
-            const response = await axios.post('http://localhost:5000/api/auth/login', {
-                email: email, // ส่ง email ไป
-                password: password
-            });
-            console.log("--- [2] Server ตอบกลับมาแล้ว! ---");
-            console.log("Status Code:", response.status);
-            console.log("Response Data:", response.data);
-            if (response.status === 200) {
-                // เก็บข้อมูลลง context
+            const response = await api.post('auth/login', { email, password });
+            
+            if (response.data.token) {
                 login(response.data.user, response.data.token);
-                navigate('/dashboard');
+                const role = response.data.user?.role;
+                if (role === 'merchant') {
+                    navigate('/dashboard');
+                } else {
+                    navigate('/');
+                }
             }
         } catch (err) {
-            console.error("--- [X] เกิดข้อผิดพลาด! ---");
-            console.log("Error Status:", err.response?.status);
-            console.log("Error Message:", err.response?.data?.message);
             setError(err.response?.data?.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
         } finally {
             setLoading(false);
         }
+    }
+
+    async function handleRegister(e) {
+        e.preventDefault();
+        if (regPassword !== regConfirm) {
+            setError('รหัสผ่านไม่ตรงกัน');
+            return;
+        }
+        setLoading(true);
+        setError('');
+
+        try {
+            const response = await api.post('auth/register', {
+                email: regEmail,
+                password: regPassword,
+                role: regRole,
+            });
+
+            if (response.data.token) {
+                login(response.data.user, response.data.token);
+                if (regRole === 'merchant') {
+                    navigate('/dashboard');
+                } else {
+                    navigate('/');
+                }
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'สมัครสมาชิกไม่สำเร็จ โปรดลองอีกครั้ง');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function switchTab(t) {
+        setTab(t);
+        setError('');
     }
 
     return (
@@ -60,7 +99,22 @@ export default function LoginRegisterPage() {
                         <span className="material-symbols-outlined text-white text-[40px] leading-none">eco</span>
                     </div>
                     <h1 className="text-3xl font-bold text-green-700">ผักชัดเจน</h1>
-                    <p className="text-gray-500 mt-1">เข้าสู่ระบบสำหรับร้านค้า</p>
+                </div>
+
+                {/* Tab switcher */}
+                <div className="bg-gray-100 rounded-2xl p-1 flex gap-1 w-full mb-4">
+                    <button
+                        onClick={() => switchTab('login')}
+                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab === 'login' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        เข้าสู่ระบบ
+                    </button>
+                    <button
+                        onClick={() => switchTab('register')}
+                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab === 'register' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        สมัครสมาชิก
+                    </button>
                 </div>
 
                 <div className="bg-white w-full rounded-3xl shadow-xl shadow-green-900/5 p-8 border border-white">
@@ -70,83 +124,175 @@ export default function LoginRegisterPage() {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        
-                        <div className="space-y-2">
-                            {/* 4. เปลี่ยน Label เป็น อีเมล */}
-                            <label className="text-sm font-semibold text-gray-700 ml-1">อีเมล</label>
-                            <div className="relative group">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 material-symbols-outlined text-[20px]">
-                                    mail {/* เปลี่ยนไอคอนเป็นรูปซองจดหมาย */}
-                                </span>
-                                <input 
-                                    type="email" 
-                                    placeholder="example@mail.com"
-                                    value={email} 
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required 
-                                    className="w-full bg-gray-50 border-none rounded-2xl pl-12 pr-4 py-4 text-gray-800 focus:ring-2 focus:ring-green-500 transition-all outline-none font-sans"
-                                />
+                    {/* ─── Login Form ─── */}
+                    {tab === 'login' && (
+                        <form onSubmit={handleLogin} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-700 ml-1">อีเมล</label>
+                                <div className="relative group">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 material-symbols-outlined text-[20px]">mail</span>
+                                    <input 
+                                        type="email" 
+                                        placeholder="example@mail.com"
+                                        value={email} 
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required 
+                                        className="w-full bg-gray-50 border-none rounded-2xl pl-12 pr-4 py-4 text-gray-800 focus:ring-2 focus:ring-green-500 transition-all outline-none font-sans"
+                                    />
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-gray-700 ml-1">รหัสผ่าน</label>
-                            <div className="relative group">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 material-symbols-outlined text-[20px]">
-                                    lock
-                                </span>
-                                <input 
-                                    type={showPassword ? "text" : "password"} 
-                                    placeholder="••••••••"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    className="w-full bg-gray-50 border-none rounded-2xl pl-12 pr-12 py-4 text-gray-800 focus:ring-2 focus:ring-green-500 transition-all outline-none font-sans"
-                                />
-                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-                                    <span className="material-symbols-outlined text-[20px]">
-                                        {showPassword ? "visibility" : "visibility_off"}
-                                    </span>
-                                </button>
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-700 ml-1">รหัสผ่าน</label>
+                                <div className="relative group">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 material-symbols-outlined text-[20px]">lock</span>
+                                    <input 
+                                        type={showPassword ? "text" : "password"} 
+                                        placeholder="••••••••"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                        className="w-full bg-gray-50 border-none rounded-2xl pl-12 pr-12 py-4 text-gray-800 focus:ring-2 focus:ring-green-500 transition-all outline-none font-sans"
+                                    />
+                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                                        <span className="material-symbols-outlined text-[20px]">{showPassword ? "visibility" : "visibility_off"}</span>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
 
-                        <button type="submit" disabled={loading} className="w-full bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-bold rounded-2xl py-4 shadow-lg shadow-green-200 transition-all flex items-center justify-center">
-                            {loading ? (
-                                <span className="animate-spin material-symbols-outlined">progress_activity</span>
-                            ) : "เข้าสู่ระบบ"}
-                        </button>
-                    </form>
-                </div>
-
-                <div className="mt-8 w-full">
-                    <button onClick={() => setShowDemo(!showDemo)} className="w-full flex items-center justify-center gap-2 text-green-600 font-medium hover:text-green-700 transition-colors">
-                        ดูบัญชีทดสอบ (Demo) 
-                        <span className={`material-symbols-outlined text-[18px] transition-transform duration-300 ${showDemo ? 'rotate-180' : ''}`}>
-                            keyboard_arrow_down
-                        </span>
-                    </button>
-                    
-                    {showDemo && (
-                        <div className="mt-3 bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-green-200 text-sm animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="flex justify-between items-center py-2 border-b border-green-100">
-                                <span className="text-gray-500">อีเมล:</span>
-                                <span className="font-sans font-bold text-gray-700">test@gmail.com</span>
-                            </div>
-                            <div className="flex justify-between items-center py-2">
-                                <span className="text-gray-500">รหัสผ่าน:</span>
-                                <span className="font-sans font-bold text-gray-700">password123</span>
-                            </div>
-                            <button onClick={() => {
-                                    setEmail('test@gmail.com');
-                                    setPassword('password123');
-                                }} className="w-full mt-3 py-2 bg-green-100 text-green-700 rounded-xl font-medium hover:bg-green-200 transition-colors">
-                                ใช้ชุดข้อมูลนี้
+                            <button type="submit" disabled={loading} className="w-full bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-bold rounded-2xl py-4 shadow-lg shadow-green-200 transition-all flex items-center justify-center">
+                                {loading ? <span className="animate-spin material-symbols-outlined">progress_activity</span> : "เข้าสู่ระบบ"}
                             </button>
-                        </div>
+                        </form>
+                    )}
+
+                    {/* ─── Register Form ─── */}
+                    {tab === 'register' && (
+                        <form onSubmit={handleRegister} className="space-y-5">
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-700 ml-1">อีเมล</label>
+                                <div className="relative group">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 material-symbols-outlined text-[20px]">mail</span>
+                                    <input 
+                                        type="email" 
+                                        placeholder="example@mail.com"
+                                        value={regEmail} 
+                                        onChange={(e) => setRegEmail(e.target.value)}
+                                        required 
+                                        className="w-full bg-gray-50 border-none rounded-2xl pl-12 pr-4 py-4 text-gray-800 focus:ring-2 focus:ring-green-500 transition-all outline-none font-sans"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-700 ml-1">รหัสผ่าน</label>
+                                <div className="relative group">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 material-symbols-outlined text-[20px]">lock</span>
+                                    <input 
+                                        type={showRegPassword ? "text" : "password"} 
+                                        placeholder="อย่างน้อย 8 ตัวอักษร"
+                                        value={regPassword}
+                                        onChange={(e) => setRegPassword(e.target.value)}
+                                        required
+                                        minLength={8}
+                                        className="w-full bg-gray-50 border-none rounded-2xl pl-12 pr-12 py-4 text-gray-800 focus:ring-2 focus:ring-green-500 transition-all outline-none font-sans"
+                                    />
+                                    <button type="button" onClick={() => setShowRegPassword(!showRegPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                                        <span className="material-symbols-outlined text-[20px]">{showRegPassword ? "visibility" : "visibility_off"}</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-700 ml-1">ยืนยันรหัสผ่าน</label>
+                                <div className="relative group">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 material-symbols-outlined text-[20px]">lock_reset</span>
+                                    <input 
+                                        type={showRegPassword ? "text" : "password"} 
+                                        placeholder="••••••••"
+                                        value={regConfirm}
+                                        onChange={(e) => setRegConfirm(e.target.value)}
+                                        required
+                                        className="w-full bg-gray-50 border-none rounded-2xl pl-12 pr-4 py-4 text-gray-800 focus:ring-2 focus:ring-green-500 transition-all outline-none font-sans"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-700 ml-1">ประเภทผู้ใช้</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                                        regRole === 'customer'
+                                            ? 'border-green-500 bg-green-50 text-green-700'
+                                            : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'
+                                    }`}>
+                                        <input
+                                            type="radio"
+                                            name="regRole"
+                                            value="customer"
+                                            checked={regRole === 'customer'}
+                                            onChange={() => setRegRole('customer')}
+                                            className="hidden"
+                                        />
+                                        <span className="material-symbols-outlined text-[22px]">shopping_basket</span>
+                                        <span className="font-semibold text-sm">ลูกค้า</span>
+                                    </label>
+                                    <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                                        regRole === 'merchant'
+                                            ? 'border-green-500 bg-green-50 text-green-700'
+                                            : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'
+                                    }`}>
+                                        <input
+                                            type="radio"
+                                            name="regRole"
+                                            value="merchant"
+                                            checked={regRole === 'merchant'}
+                                            onChange={() => setRegRole('merchant')}
+                                            className="hidden"
+                                        />
+                                        <span className="material-symbols-outlined text-[22px]">storefront</span>
+                                        <span className="font-semibold text-sm">ร้านค้า</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" disabled={loading} className="w-full bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-bold rounded-2xl py-4 shadow-lg shadow-green-200 transition-all flex items-center justify-center">
+                                {loading ? <span className="animate-spin material-symbols-outlined">progress_activity</span> : regRole === 'merchant' ? "สมัครสมาชิกและตั้งค่าร้าน" : "สมัครสมาชิก"}
+                            </button>
+                        </form>
                     )}
                 </div>
+
+                {/* Demo accounts (login tab only) */}
+                {tab === 'login' && (
+                    <div className="mt-8 w-full">
+                        <button onClick={() => setShowDemo(!showDemo)} className="w-full flex items-center justify-center gap-2 text-green-600 font-medium hover:text-green-700 transition-colors">
+                            ดูบัญชีทดสอบ (Demo) 
+                            <span className={`material-symbols-outlined text-[18px] transition-transform duration-300 ${showDemo ? 'rotate-180' : ''}`}>
+                                keyboard_arrow_down
+                            </span>
+                        </button>
+                        
+                        {showDemo && (
+                            <div className="mt-3 bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-green-200 text-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="flex justify-between items-center py-2 border-b border-green-100">
+                                    <span className="text-gray-500">อีเมล:</span>
+                                    <span className="font-sans font-bold text-gray-700">test@gmail.com</span>
+                                </div>
+                                <div className="flex justify-between items-center py-2">
+                                    <span className="text-gray-500">รหัสผ่าน:</span>
+                                    <span className="font-sans font-bold text-gray-700">password123</span>
+                                </div>
+                                <button onClick={() => {
+                                        setEmail('test@gmail.com');
+                                        setPassword('password123');
+                                    }} className="w-full mt-3 py-2 bg-green-100 text-green-700 rounded-xl font-medium hover:bg-green-200 transition-colors">
+                                    ใช้ชุดข้อมูลนี้
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>  
         </div>
     );
