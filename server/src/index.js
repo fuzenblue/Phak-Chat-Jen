@@ -9,6 +9,7 @@ import uploadRoutes from './routes/upload.js';
 import pool from './config/database.js';
 import authRoutes from './routes/auth.js';
 import agentRoutes from './routes/agent.js';
+import favoritesRoutes from './routes/favorites.js';
 
 
 import { startAgentLoop } from './agent/loop.js';
@@ -38,6 +39,7 @@ app.use('/api/v1/scans', scansRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/v1/agent', agentRoutes);
+app.use('/api/v1/favorites', favoritesRoutes);
 // ==================== Health Check ====================
 app.get('/api/health', async (req, res) => {
     try {

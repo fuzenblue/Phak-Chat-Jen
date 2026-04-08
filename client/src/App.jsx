@@ -3,8 +3,9 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import CustomerNavbar from './components/CustomerNavbar'
 import HomePage from './pages/HomePage'
-import ChatPage from './pages/ChatPage'
 import MapPage from './pages/MapPage'
+import FavoritesPage from './pages/FavoritesPage';
+import CustomerProfilePage from './pages/CustomerProfilePage';
 import ProtectedRoute from './contexts/ProtectedRoute';
 import LoginRegisterPage from './pages/LoginRegisterPage';
 import MyProductsPage from './pages/MyProductsPage';
@@ -22,6 +23,8 @@ const App = () => {
           {/* Fullscreen Pages (No restriction in App.jsx) */}
           <Route path="/" element={<HomePage />} />
           <Route path="/map" element={<MapPage />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/profile" element={<CustomerProfilePage />} />
           <Route path="/login" element={<LoginRegisterPage />} />
           
           {/* Standard Pages wrapped with spacing container */}
@@ -31,8 +34,6 @@ const App = () => {
               <div className="min-h-screen bg-gray-50">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-24">
                   <Routes>
-                    <Route path="/chat" element={<ChatPage />} />
-                    
                     <Route path="/shops/:id" element={<StoreDetailPage />} />
                     
                     <Route path="/dashboard" element={<MyProductsPage />} />
