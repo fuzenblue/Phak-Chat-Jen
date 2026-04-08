@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api'; 
+import api from '../services/api'; 
 
 export default function LoginRegisterPage() {
     const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function LoginRegisterPage() {
     const [regRole, setRegRole] = useState('customer');
 
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(''); 
     const [error, setError] = useState(''); 
 
     async function handleLogin(e) {

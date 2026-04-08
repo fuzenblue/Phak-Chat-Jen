@@ -5,13 +5,59 @@ import { isOpenNow } from '../utils/isOpenNow.js';
 
 const router = express.Router();
 
+// GET /shops — list all shops (for map)
+router.get('/', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT s.*, 
+             COUNT(p.id) as items_count,
+             MIN(p.price) as min_price
+      FROM shops s
+      LEFT JOIN posts p ON s.id = p.shop_id AND p.status = 'active'
+      GROUP BY s.id
+    `);
+
+    const shops = result.rows.map(s => ({
+      id: s.id,
+      name: s.shop_name,
+      lat: s.latitude,
+      lng: s.longitude,
+      min_price: s.min_price || 0,
+      items_count: parseInt(s.items_count),
+      image_url: s.image_url,
+      description: s.description,
+      is_open: isOpenNow(s.opening_hours)
+    }));
+
+    res.json({ success: true, data: shops });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: err.message } });
+  }
+});
+
+// GET /shops/my-shop — get current user's shop
+router.get('/my-shop', requireAuth, async (req, res) => {
+  const user_id = req.user.id;
+  try {
+    const result = await pool.query('SELECT * FROM shops WHERE user_id = $1', [user_id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'No shop' } });
+    }
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: err.message } });
+  }
+});
+
 // POST /shops — create shop
 router.post('/', requireAuth, async (req, res) => {
   const { shop_name, shop_address, description, shop_image_url, latitude, longitude, opening_hours } = req.body;
   const user_id = req.user.id;
 
   try {
-    // 1 user can have 1 shop
+    // 1 user can have 1 shop (now checking if it's there to return id for updating if needed, but here simple reject as before)
     const existing = await pool.query('SELECT id FROM shops WHERE user_id = $1', [user_id]);
     if (existing.rows.length > 0) {
       return res.status(422).json({
@@ -30,6 +76,84 @@ router.post('/', requireAuth, async (req, res) => {
     );
 
     res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: err.message } });
+  }
+});
+
+// GET /shops/nearby — get shops nearby
+router.get('/nearby', async (req, res) => {
+  const { lat, lng, radius, veg_type } = req.query;
+
+  // validate params
+  if (!lat || !lng || !radius) {
+    return res.status(422).json({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: 'กรุณาระบุ lat, lng และ radius' }
+    });
+  }
+
+  try {
+    // PostGIS query — get shops in radius + get min_price and preview_image
+    let query = `
+      SELECT 
+        s.id,
+        s.shop_name,
+        s.image_url as shop_image_url,
+        s.latitude,
+        s.longitude,
+        s.opening_hours,
+        s.rating,
+        ROUND(ST_Distance(
+          s.location::geography,
+          ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography
+        )) AS distance_meters,
+        MIN(p.price) AS min_price,
+        COUNT(p.id) AS post_count,
+        (
+          SELECT vs.image_url 
+          FROM posts p2
+          JOIN vegetable_scans vs ON p2.scan_id = vs.id
+          WHERE p2.shop_id = s.id 
+            AND p2.status = 'active'
+            ${veg_type ? `AND vs.veg_type ILIKE $4` : ''}
+          LIMIT 1
+        ) AS preview_image_url
+      FROM shops s
+      LEFT JOIN posts p ON p.shop_id = s.id AND p.status = 'active'
+      WHERE ST_DWithin(
+        s.location::geography,
+        ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
+        $3
+      )
+      GROUP BY s.id
+      ORDER BY distance_meters ASC
+    `;
+
+    const values = [parseFloat(lat), parseFloat(lng), parseInt(radius)];
+    if (veg_type) values.push(`%${veg_type}%`);
+
+    const result = await pool.query(query, values);
+
+    // filter isOpenNow in JS
+    const shops = result.rows
+      .filter(s => isOpenNow(s.opening_hours))
+      .map(s => ({
+        id: s.id,
+        shop_name: s.shop_name,
+        shop_image_url: s.shop_image_url,
+        latitude: s.latitude,
+        longitude: s.longitude,
+        distance_meters: parseInt(s.distance_meters),
+        is_open_now: true,
+        rating: s.rating,
+        min_price: s.min_price ? parseFloat(s.min_price) : null,
+        post_count: parseInt(s.post_count),
+        preview_image_url: s.preview_image_url ?? s.shop_image_url,
+      }));
+
+    res.json({ success: true, data: shops });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: err.message } });
@@ -108,7 +232,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
       });
     }
 
-    // create dynamic query — update only fields that are sent
+    // create dynamic query
     const fields = [];
     const values = [];
     let i = 1;
