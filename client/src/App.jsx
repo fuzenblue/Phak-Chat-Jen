@@ -14,6 +14,7 @@ import StoreSetup from './pages/StoreSetup';
 import AddProduct from './pages/AddProduct';
 import AgentSettingsPage from './pages/AgentSettingsPage';
 import AgentActivityPage from './pages/AgentActivityPage';
+import EditProductPage from './pages/EditProductPage';
 
 const App = () => {
   return (
@@ -31,20 +32,17 @@ const App = () => {
           <Route 
             path="*" 
             element={
-              <div className="min-h-screen bg-gray-50">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-24">
-                  <Routes>
+              <Routes>
                     <Route path="/shops/:id" element={<StoreDetailPage />} />
                     
                     <Route path="/dashboard" element={<MyProductsPage />} />
                     <Route path="/dashboard/setup" element={<StoreSetup />} />
                                       
                     <Route path="/add-product" element={<AddProduct />} />
+                    <Route path="/merchant/products/:id/edit" element={<EditProductPage />} />
                     <Route path="/dashboard/agent" element={<AgentSettingsPage />} />
                     <Route path="/dashboard/agent/activity" element={<AgentActivityPage />} />
                   </Routes>
-                </div>
-              </div>
             } 
           />
         </Routes>

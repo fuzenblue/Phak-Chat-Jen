@@ -3,13 +3,13 @@ import React from 'react';
 export default function MerchantNavbar({ shopName, ownerName, onLogout }) {
   return (
     <nav className="sticky top-0 z-20 w-full bg-white border-b border-gray-100 shadow-sm h-14 font-prompt">
-      <div className="max-w-6xl mx-auto h-full flex items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
         
         {/* Left Section - Logo & Store Info */}
         <div className="flex items-center gap-4 overflow-hidden">
-          <div className="flex items-center gap-2 shrink-0 border-r border-gray-100 pr-4">
-            <span className="material-symbols-outlined text-green-500 text-[22px]">eco</span>
-            <span className="font-semibold text-green-600 text-sm hidden xs:inline">ผักชัดเจน</span>
+          <div className="flex items-center gap-1.5 shrink-0 border-r border-gray-100 pr-4">
+            <span className="material-symbols-outlined text-green-500 text-[20px]">eco</span>
+            <span className="font-semibold text-green-600 text-[13px] sm:text-sm hidden xs:inline">ผักชัดเจน</span>
           </div>
           
           <div className="flex items-center gap-2 overflow-hidden">

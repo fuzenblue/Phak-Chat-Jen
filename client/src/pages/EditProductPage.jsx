@@ -3,47 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import MerchantNavbar from "../components/MerchantNavbar";
 import FreshnessBar from "../components/FreshnessBar";
 import StatusBadge, { scoreToBadgeType } from "../components/StatusBadge";
-import { getFreshnessAdvice } from "./MyProductsPage";
 import api from "../services/api";
-
-const MOCK_DETAIL = {
-  id: "1",
-  name: "ผักกาดขาว",
-  category: "ผักกาด",
-  price: 30,
-  salePrice: 30,
-  freshnessScore: 92,
-  imageUrl: "https://images.unsplash.com/photo-1597362925123-77861d3fbac7?w=600&q=80",
-  isActive: true,
-  aiAdvice: "ผักกาดขาวสดใหม่มาก ใบเขียวสวาย ไม่มีรอยช้ำ ควรขายได้ดีภายใน 3-4 วัน",
-};
-
-function Toggle({ checked, onChange }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full transition-colors duration-200 ${
-        checked ? "bg-green-500" : "bg-gray-300"
-      }`}
-    >
-      <span
-        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
-          checked ? "translate-x-6" : "translate-x-1"
-        }`}
-      />
-    </button>
-  );
-}
-
-function SectionCard({ title, children }) {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-      <h2 className="text-base font-bold text-gray-900 mb-4">{title}</h2>
-      {children}
-    </div>
-  );
-}
 
 export default function EditProductPage() {
   const { id } = useParams();
@@ -52,24 +12,28 @@ export default function EditProductPage() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-
+  const [showSuccess, setShowSuccess] = useState(false);
+  
   const [salePrice, setSalePrice] = useState("");
+  const [quantity, setQuantity] = useState(""); 
   const [isActive, setIsActive] = useState(true);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
+  // 1. ดึงข้อมูลจาก DB จริงมาโชว์ตอนโหลดหน้า
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        // const { data } = await api.get(`/merchant/products/${id}`);
-        await new Promise((r) => setTimeout(r, 500));
-        const data = MOCK_DETAIL;
+        // เรียกไปที่ /v1/posts/:id ตามโครงสร้างตาราง posts
+        const response = await api.get(`v1/posts/${id}`);
+        const data = response.data.data;
+        
         setProduct(data);
-        setSalePrice(String(data.salePrice ?? data.price));
-        setIsActive(data.isActive);
+        setSalePrice(String(data.price));
+        setQuantity(String(data.quantity));
+        setIsActive(data.status === 'active');
       } catch (err) {
-        setError("ไม่สามารถโหลดข้อมูลสินค้าได้");
+        console.error("Error fetching product:", err);
+        alert("ไม่สามารถโหลดข้อมูลจาก Database ได้");
       } finally {
         setLoading(false);
       }
@@ -77,188 +41,158 @@ export default function EditProductPage() {
     fetchProduct();
   }, [id]);
 
+  // ระบบเช็คราคากับ AI (ล็อคไม่ให้เกิน recommended_price ถ้ามีใน DB)
+  const isPriceTooHigh = Number(salePrice) > (product?.recommended_price || product?.price);
+
+  // 2. บันทึกข้อมูลลง DB จริง
   const handleSave = async () => {
+    if (isPriceTooHigh) {
+      alert("ราคาขายห้ามสูงกว่าที่ AI แนะนำ");
+      return;
+    }
+
     try {
       setSaving(true);
-      const payload = { salePrice: Number(salePrice), isActive };
-      // await api.patch(`/merchant/products/${id}`, payload);
-      await new Promise((r) => setTimeout(r, 700));
-      navigate(-1);
+      // เตรียม Payload ให้ตรงกับชื่อคอลัมน์ในตาราง posts
+      const payload = { 
+        price: Number(salePrice), 
+        quantity: Number(quantity), 
+        status: isActive ? 'active' : 'inactive' 
+      };
+
+      // ยิง PATCH ไปที่ API ของเพื่อน
+      await api.patch(`v1/posts/${id}`, payload);
+      setShowSuccess(true);
     } catch (err) {
-      alert("บันทึกไม่สำเร็จ กรุณาลองใหม่");
+      console.error("Error saving product:", err);
+      alert("บันทึกไม่สำเร็จ กรุณาเช็คการเชื่อมต่อ API");
     } finally {
       setSaving(false);
     }
   };
 
+  // 3. ฟังก์ชันลบสินค้าออกจาก DB
   const handleDelete = async () => {
+    if (!window.confirm("คุณต้องการลบสินค้านี้ใช่หรือไม่?")) return;
     try {
-      // await api.delete(`/merchant/products/${id}`);
-      navigate("/merchant/products");
+      await api.delete(`v1/posts/${id}`);
+      navigate("/merchant/dashboard");
     } catch (err) {
-      console.error(err);
+      alert("ลบไม่สำเร็จ");
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 font-['Sarabun']">
-        <MerchantNavbar />
-        <div className="flex items-center justify-center py-32">
-          <div className="w-8 h-8 border-4 border-green-200 border-t-green-500 rounded-full animate-spin" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !product) {
-    return (
-      <div className="min-h-screen bg-gray-50 font-['Sarabun']">
-        <MerchantNavbar />
-        <div className="flex flex-col items-center justify-center py-32 gap-2 text-red-400">
-          <p className="text-sm font-medium">{error ?? "ไม่พบสินค้า"}</p>
-          <button onClick={() => navigate(-1)} className="text-sm text-gray-500 underline">ย้อนกลับ</button>
-        </div>
-      </div>
-    );
-  }
-
-  const badgeType = isActive ? scoreToBadgeType(product.freshnessScore) : "soldout";
-  const aiAdvice = product.aiAdvice ?? getFreshnessAdvice(product.freshnessScore);
-  const currentSalePrice = Number(salePrice);
-  const hasDiscount = currentSalePrice < product.price && currentSalePrice > 0;
+  if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="w-10 h-10 border-4 border-t-green-500 rounded-full animate-spin" /></div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 font-['Sarabun']">
-      <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-      <MerchantNavbar />
+    <div className="min-h-screen bg-[#F9FAFB] font-['Sarabun'] pb-12">
 
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate(-1)}
-              className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 transition"
-            >
-              <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <h1 className="text-base font-black text-gray-900">แก้ไขสินค้า</h1>
+      {/* DaisyUI v5 Success Modal */}
+      <dialog className={`modal ${showSuccess ? 'modal-open' : ''}`}>
+        <div className="modal-box text-center rounded-3xl">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <span className="material-symbols-outlined text-4xl text-green-500">check_circle</span>
+            </div>
           </div>
+          <h3 className="text-xl font-black text-gray-900 mb-2">บันทึกสำเร็จ!</h3>
+          <p className="text-gray-400 text-sm mb-6">อัปเดตข้อมูลสินค้าในระบบเรียบร้อยแล้ว</p>
           <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white text-sm font-bold px-4 py-2 rounded-xl transition shadow-sm shadow-green-100"
+            onClick={() => { setShowSuccess(false); navigate(-1); }}
+            className="btn btn-success text-white w-full rounded-xl font-bold"
           >
-            {saving ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : "บันทึก"}
+            กลับหน้าสินค้า
           </button>
         </div>
-      </div>
+        <form method="dialog" className="modal-backdrop">
+          <button onClick={() => setShowSuccess(false)}>close</button>
+        </form>
+      </dialog>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <div className="flex gap-4">
-            <div className="w-28 h-28 rounded-2xl overflow-hidden bg-gray-50 flex-shrink-0">
-              <img
-                src={product.imageUrl}
-                alt={product.name}
-                className="w-full h-full object-cover"
-                onError={(e) => { e.target.src = "https://placehold.co/200x200?text=No+Image"; }}
-              />
+      <MerchantNavbar shopName={product?.shop_name || "ร้านของคุณ"} />
+
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigate(-1)} className="p-2 bg-white rounded-xl border border-gray-200">
+              <span className="material-symbols-outlined">arrow_back</span>
+            </button>
+            <h1 className="text-2xl font-black">แก้ไขสินค้า</h1>
+          </div>
+          <button 
+            onClick={handleSave} 
+            disabled={saving || isPriceTooHigh}
+            className={`px-8 py-3 rounded-xl font-bold text-white shadow-lg transition ${
+              isPriceTooHigh ? "bg-gray-300" : "bg-green-500 hover:bg-green-600"
+            }`}
+          >
+            {saving ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* ส่วนแสดงผลรูปภาพและ AI */}
+          <div className="lg:col-span-5">
+            <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm p-6">
+              <img src={product?.image} className="w-full aspect-square object-cover rounded-2xl mb-6" alt="" />
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">{product?.name}</h2>
+                <StatusBadge type={isActive ? scoreToBadgeType(product?.freshness_score) : 'soldout'} />
+              </div>
+              <FreshnessBar score={product?.freshness_score} />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2 mb-1">
+          </div>
+
+          {/* ส่วนแก้ไขข้อมูลที่เชื่อมกับ DB */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">จัดการคลังสินค้าและราคา</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h2 className="font-black text-lg text-gray-900 leading-tight">{product.name}</h2>
-                  <p className="text-sm text-gray-400">{product.category}</p>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">ราคาขาย (฿)</label>
+                  <input 
+                    type="number" 
+                    value={salePrice} 
+                    onChange={(e) => setSalePrice(e.target.value)}
+                    className={`w-full bg-gray-50 border-2 rounded-xl px-4 py-3 font-bold outline-none ${
+                      isPriceTooHigh ? "border-red-400 text-red-600" : "border-gray-100 focus:border-green-400"
+                    }`}
+                  />
+                  {isPriceTooHigh && <p className="text-xs text-red-500 mt-2 font-bold">ราคาสูงกว่าที่ AI แนะนำ!</p>}
                 </div>
-                <StatusBadge type={badgeType} />
-              </div>
-              <div className="flex items-center justify-between text-sm mb-1">
-                <span className="text-gray-500 font-medium">ความสด</span>
-                <span className="font-black text-gray-900">{product.freshnessScore}/100</span>
-              </div>
-              <FreshnessBar score={product.freshnessScore} />
-            </div>
-          </div>
 
-          <div className="mt-4 bg-blue-50 rounded-xl px-4 py-3 border border-blue-100">
-            <p className="text-sm text-blue-700 leading-relaxed">
-              <span className="font-bold">✦ AI: </span>{aiAdvice}
-            </p>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">จำนวนในสต็อก (Quantity)</label>
+                  <input 
+                    type="number" 
+                    value={quantity} 
+                    onChange={(e) => setQuantity(e.target.value)}
+                    className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 font-bold focus:border-green-400 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-8 pt-8 border-t border-gray-50 flex items-center justify-between">
+                <div>
+                  <p className="font-bold">สถานะการแสดงผล</p>
+                  <p className="text-xs text-gray-400">เปิดเพื่อให้ลูกค้าเห็นในหน้าร้าน</p>
+                </div>
+                <button 
+                  onClick={() => setIsActive(!isActive)}
+                  className={`w-12 h-6 rounded-full transition-colors relative ${isActive ? 'bg-green-500' : 'bg-gray-300'}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${isActive ? 'left-7' : 'left-1'}`} />
+                </button>
+              </div>
+            </div>
+
+            <button onClick={handleDelete} className="w-full py-4 text-red-500 font-bold hover:bg-red-50 rounded-2xl transition border border-red-100">
+              ลบสินค้าออกจากระบบ
+            </button>
           </div>
         </div>
-
-        <SectionCard title="ตั้งค่าราคา">
-          <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 mb-3">
-            <span className="text-sm text-gray-500">ราคาเต็ม</span>
-            <span className="text-sm font-bold text-gray-900">฿{product.price}</span>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-600 mb-2">ราคาขาย</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">฿</span>
-              <input
-                type="number"
-                value={salePrice}
-                onChange={(e) => setSalePrice(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl pl-8 pr-4 py-3 text-sm focus:ring-2 focus:ring-green-400 outline-none bg-gray-50"
-              />
-            </div>
-            {hasDiscount && (
-              <p className="text-xs text-red-500 font-medium mt-1.5">
-                ลด {Math.round((1 - currentSalePrice / product.price) * 100)}% จากราคาเต็ม
-              </p>
-            )}
-          </div>
-        </SectionCard>
-
-        <SectionCard title="สถานะสินค้า">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-gray-800">กำลังขาย</p>
-              <p className="text-xs text-gray-400 mt-0.5">สินค้าจะแสดงให้ลูกค้าเห็นในหน้าร้าน</p>
-            </div>
-            <Toggle checked={isActive} onChange={setIsActive} />
-          </div>
-        </SectionCard>
-
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white font-bold py-4 rounded-2xl transition text-sm shadow-sm"
-        >
-          {saving ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
-        </button>
-
-        <button
-          onClick={() => setConfirmDelete(true)}
-          className="w-full border border-red-200 text-red-500 hover:bg-red-50 font-bold py-4 rounded-2xl transition text-sm"
-        >
-          ลบสินค้านี้
-        </button>
-      </div>
-
-      {confirmDelete && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl">
-            <div className="flex flex-col items-center text-center gap-3 mb-6">
-              <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center">
-                <svg className="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </div>
-              <h3 className="text-base font-bold text-gray-900">ลบ "{product.name}"?</h3>
-              <p className="text-sm text-gray-500">ข้อมูลจะถูกลบถาวร ไม่สามารถกู้คืนได้</p>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmDelete(false)} className="flex-1 py-3 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50">ยกเลิก</button>
-              <button onClick={handleDelete} className="flex-1 py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-sm font-bold text-white">ลบสินค้า</button>
-            </div>
-          </div>
-        </div>
-      )}
+      </main>
     </div>
   );
 }

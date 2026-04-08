@@ -82,7 +82,7 @@ export default function MyProductsPage() {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/v1/posts/${id}`);
+      await api.delete(`v1/posts/${id}`);
       setProducts((prev) => prev.filter((p) => p.id !== id));
       setDeleteId(null);
     } catch (err) {
