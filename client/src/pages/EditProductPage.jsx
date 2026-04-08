@@ -111,7 +111,7 @@ export default function EditProductPage() {
 
       <MerchantNavbar shopName={product?.shop_name || "ร้านของคุณ"} />
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-4">
             <button onClick={() => navigate(-1)} className="p-2 bg-white rounded-xl border border-gray-200">
