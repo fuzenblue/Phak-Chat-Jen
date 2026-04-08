@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ เพิ่ม useNavigate
 import api from "../services/api";
 
 const CATEGORIES = [
@@ -18,7 +19,9 @@ const CATEGORIES = [
   { id: 14, emoji: "🧅", name: "หัวหอม", color: "#fff3e0" },
   { id: 15, emoji: "🍄", name: "เห็ด", color: "#efebe9" },
   { id: 16, emoji: "🫚", name: "ผักชี", color: "#e8f5e9" },
-  { id: 17, emoji: "🌱", name: "ต้นอ่อน", color: "#f1f8e9" },
+  { id: 17, emoji: "🌱", name: "ต้นอ่อนทานตะวัน", color: "#f1f8e9" },
+  { id: 18, emoji: "🥬", name: "ใบกระเพรา", color: "#8be392" },
+  { id: 19, emoji: "🍈", name: "มะละกอ", color: "#f05411" },
 ];
 
 const UNITS = ["บาท/กก.", "บาท/กำ", "บาท/แพ็ก", "บาท/ลูก", "บาท/มัด"];
@@ -104,13 +107,9 @@ const Step1 = ({ onNext, selected, setSelected }) => {
   );
 };
 
-const Step2 = ({ onAnalyze, selectedCat }) => {
-  const [images, setImages] = useState([]);
-  const [basePrice, setBasePrice] = useState("");
-  const [unit, setUnit] = useState(UNITS[0]);
+const Step2 = ({ onAnalyze, selectedCat, images, setImages, basePrice, setBasePrice, unit, setUnit, desc, setDesc }) => {
+  const navigate = useNavigate(); // ✅ ดึง navigate มาใช้
   const [showUnit, setShowUnit] = useState(false);
-  const [days, setDays] = useState("");
-  const [desc, setDesc] = useState("");
   const [loading, setLoading] = useState(false);
   const fileRef = useRef();
 
@@ -138,6 +137,7 @@ const Step2 = ({ onAnalyze, selectedCat }) => {
       formData.append('image', images[0].file);
       formData.append('veg_type', CATEGORIES.find(c => c.id === selectedCat).name);
       formData.append('original_price', basePrice);
+      formData.append('description', desc);
 
       const response = await api.post('v1/scans', formData, {
         headers: {
@@ -145,9 +145,13 @@ const Step2 = ({ onAnalyze, selectedCat }) => {
         }
       });
 
-      onAnalyze({ ...response.data.data, basePrice, unit });
+      // ✅ Log ส่องข้อมูลจาก AI เพื่อความชัวร์เวลาแก้บัค
+      console.log("🔥 ข้อมูลจาก AI (Scan Result):", response.data);
+
+      onAnalyze({ ...response.data.data, basePrice, unit, desc });
     } catch (err) {
-      if (err.response?.data?.error?.code === 'SHOP_NOT_FOUND') {
+      // ✅ ใช้ navigate ได้แล้ว
+      if (err.response?.status === 404 || err.response?.data?.error?.code === 'SHOP_NOT_FOUND') {
         alert("กรุณาตั้งค่าร้านค้าก่อนใช้งานระบบสแกนครับ");
         navigate('/dashboard/setup');
         return;
@@ -197,7 +201,7 @@ const Step2 = ({ onAnalyze, selectedCat }) => {
               ))}
             </div>
           )}
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFiles(e.target.files)} />
+          <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleFiles(e.target.files)} />
         </div>
 
         <div>
@@ -252,9 +256,9 @@ const Step2 = ({ onAnalyze, selectedCat }) => {
       <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto px-5 pb-6 pt-3 bg-white/95 backdrop-blur-sm border-t border-gray-100">
         <button
           onClick={() => canAnalyze && handleSubmit()}
-          disabled={!canAnalyze}
+          disabled={!canAnalyze || loading}
           className={`w-full py-4 font-semibold rounded-2xl flex items-center justify-center gap-2 transition-all ${
-            canAnalyze
+            canAnalyze && !loading
               ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200 active:scale-98"
               : "bg-gray-100 text-gray-400 cursor-not-allowed"
           }`}
@@ -274,18 +278,25 @@ const Step2 = ({ onAnalyze, selectedCat }) => {
 };
 
 const Step3 = ({ scanResult, onConfirm }) => {
-  const [finalPrice, setFinalPrice] = useState(scanResult?.recommended_price || "");
+  const [finalPrice, setFinalPrice] = useState(scanResult?.recommended_price || scanResult?.basePrice || "");
+  const [quantity, setQuantity] = useState(1); 
   const [loading, setLoading] = useState(false);
-
   const handlePost = async () => {
     setLoading(true);
     try {
-      await api.post('v1/posts', {
-        scan_id: scanResult.scan_id,
-        price: finalPrice,
-        original_price: scanResult.original_price,
-        expired_at: new Date(Date.now() + scanResult.estimated_shelf_life_days * 24 * 60 * 60 * 1000).toISOString()
-      });
+      const shelfLife = scanResult.estimated_shelf_life_days || 3;
+      const expiredAt = new Date(Date.now() + shelfLife * 24 * 60 * 60 * 1000).toISOString();
+
+      const payload = {
+        scan_id: scanResult.id || scanResult.scan_id,
+        price: Number(finalPrice),
+        original_price: Number(scanResult.basePrice),
+        quantity: Number(quantity), // 👈 ต้องมีบรรทัดนี้ ส่งไปเป็นตัวเลข
+        expired_at: expiredAt,
+        status: 'active'
+      };
+
+      await api.post('v1/posts', payload);
       onConfirm();
     } catch (err) {
       console.error("Post error:", err);
@@ -307,39 +318,66 @@ const Step3 = ({ scanResult, onConfirm }) => {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-semibold text-gray-500">ความสด</span>
-                <span className="text-xl font-bold" style={{ color: scoreColor }}>{scanResult.freshness_score}/100</span>
+                <span className="text-xl font-bold" style={{ color: scoreColor }}>{scanResult.freshness_score || 0}/100</span>
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
-                <div className="h-full transition-all duration-1000" style={{ width: `${scanResult.freshness_score}%`, background: scoreColor }} />
+                <div className="h-full transition-all duration-1000" style={{ width: `${scanResult.freshness_score || 0}%`, background: scoreColor }} />
               </div>
               <div className="bg-blue-50 rounded-xl p-2.5">
-                <p className="text-xs leading-relaxed text-blue-700">{scanResult.ai_summary}</p>
+                <p className="text-xs leading-relaxed text-blue-700">{scanResult.ai_summary || "ไม่พบคำอธิบายจาก AI"}</p>
               </div>
             </div>
           </div>
         </div>
+        
         <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
-          <p className="text-sm font-bold text-gray-800">ราคาแนะนำ</p>
-          <div className="flex items-center justify-between py-2.5 bg-green-50 -mx-4 px-4 rounded-xl">
-            <span className="text-sm text-gray-600">ราคาแนะนำ (ลด {scanResult.recommended_discount_percent}%)</span>
-            <span className="text-lg font-bold text-green-600">฿{scanResult.recommended_price}</span>
+          <p className="text-sm font-bold text-gray-800">ตั้งราคาและจำนวน</p>
+          <div className="flex items-center justify-between py-2 bg-gray-50 -mx-4 px-4">
+            <span className="text-sm text-gray-600">
+              ราคาตั้งต้น: <span className="line-through text-gray-400 mr-1">฿{scanResult.basePrice}</span>
+              {scanResult.recommended_discount_percent ? <span className="text-green-600 font-semibold text-xs bg-green-100 px-1 rounded">(ลด {scanResult.recommended_discount_percent}%)</span> : null}
+            </span>
+            {scanResult.recommended_price && (
+              <span className="text-sm font-bold text-green-600">แนะนำ: ฿{scanResult.recommended_price}</span>
+            )}
           </div>
-          <div className="relative mt-2">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">฿</span>
-            <input
-              value={finalPrice}
-              onChange={e => setFinalPrice(e.target.value)}
-              type="number"
-              className="w-full pl-7 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-300"
-            />
+          
+          
+          <div className="flex gap-3 mt-2">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">฿</span>
+              <input
+                value={finalPrice}
+                onChange={e => setFinalPrice(e.target.value)}
+                type="number"
+                placeholder="ราคาขาย"
+                className="w-full pl-7 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-300"
+              />
+            </div>
+            <div className="relative w-1/3">
+              <input
+                value={quantity}
+                onChange={e => setQuantity(e.target.value)}
+                type="number"
+                min="1"
+                placeholder="จำนวน"
+                className="w-full pl-4 pr-8 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-300"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-xs">ชิ้น</span>
+            </div>
           </div>
+
         </div>
       </div>
       <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto px-5 pb-6 pt-3 bg-white/95 backdrop-blur-sm border-t border-gray-100">
         <button
           onClick={handlePost}
-          disabled={loading}
-          className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-2xl shadow-lg shadow-green-200 flex items-center justify-center gap-2 active:scale-98"
+          disabled={loading || !finalPrice || !quantity}
+          className={`w-full py-4 font-semibold rounded-2xl shadow-lg flex items-center justify-center gap-2 active:scale-98 transition-all ${
+            loading || !finalPrice || !quantity
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+              : "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-green-200"
+          }`}
         >
           {loading ? (
              <span className="animate-spin material-symbols-outlined text-[20px]">progress_activity</span>
@@ -355,33 +393,53 @@ const Step3 = ({ scanResult, onConfirm }) => {
   );
 };
 
-const Step4 = ({ onReset }) => (
-  <div className="flex flex-col items-center justify-center h-full px-5 text-center">
-    <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6">
-      <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
-        <span className="material-symbols-outlined text-white text-[32px]">check</span>
+const Step4 = ({ onReset }) => {
+  const navigate = useNavigate(); 
+  
+  return (
+    <div className="flex flex-col items-center justify-center h-full px-5 text-center">
+      <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6">
+        <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
+          <span className="material-symbols-outlined text-white text-[32px]">check</span>
+        </div>
+      </div>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">ลงขายสำเร็จ! 🎉</h2>
+      <p className="text-gray-500 text-sm mb-8 leading-relaxed">สินค้าของคุณถูกบันทึกลงในระบบเรียบร้อยแล้ว</p>
+      
+      <div className="w-full space-y-3">
+        {/* ✅ ปุ่มหลักสีเขียว: ให้ Navigate ไปหน้ารายการสินค้า */}
+        <button
+          onClick={() => navigate('/dashboard')} // ⚠️ เช็ค URL ตรงนี้ให้ตรงกับ Route หน้าสินค้านะครับ (เช่น /products หรือ /merchant/products)
+          className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-2xl shadow-lg shadow-green-200"
+        >
+          กลับหน้ารายการสินค้า
+        </button>
+        
+        {/* ✅ ปุ่มรองสีขาว: เก็บไว้เผื่ออยากลงผักเพิ่มเลย */}
+        <button
+          onClick={onReset}
+          className="w-full py-4 bg-white border border-gray-200 text-gray-600 font-semibold rounded-2xl shadow-sm hover:bg-gray-50"
+        >
+          เพิ่มสินค้าใหม่อีกชิ้น
+        </button>
       </div>
     </div>
-    <h2 className="text-2xl font-bold text-gray-800 mb-2">ลงขายสำเร็จ! 🎉</h2>
-    <p className="text-gray-500 text-sm mb-8 leading-relaxed">สินค้าของคุณถูกลงขายเรียบร้อยแล้ว</p>
-    <button
-      onClick={onReset}
-      className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-2xl shadow-lg shadow-green-200"
-    >
-      เพิ่มสินค้าใหม่
-    </button>
-  </div>
-);
+  );
+};
 
 export default function AddProduct() {
   const [step, setStep] = useState(1);
   const [selectedCat, setSelectedCat] = useState(null);
   const [scanResult, setScanResult] = useState(null);
+  const [images, setImages] = useState([]);
+  const [basePrice, setBasePrice] = useState("");
+  const [unit, setUnit] = useState(UNITS[0]);
+  const [desc, setDesc] = useState("");
 
   const handleBack = () => { if (step > 1) setStep(s => s - 1); };
   const handleAnalyze = (result) => { setScanResult(result); setStep(3); };
   const handleConfirm = () => setStep(4);
-  const handleReset = () => { setStep(1); setSelectedCat(null); setScanResult(null); };
+  const handleReset = () => { setStep(1); setSelectedCat(null); setScanResult(null); setImages([]); setBasePrice(""); setUnit(UNITS[0]); setDesc(""); };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-start justify-center font-sans">
@@ -402,7 +460,7 @@ export default function AddProduct() {
         )}
         <div className="flex-1 overflow-hidden flex flex-col">
           {step === 1 && <Step1 onNext={() => setStep(2)} selected={selectedCat} setSelected={setSelectedCat} />}
-          {step === 2 && <Step2 onAnalyze={handleAnalyze} selectedCat={selectedCat} />}
+          {step === 2 && <Step2 onAnalyze={handleAnalyze} selectedCat={selectedCat} images={images} setImages={setImages} basePrice={basePrice} setBasePrice={setBasePrice} unit={unit} setUnit={setUnit} desc={desc} setDesc={setDesc} />}
           {step === 3 && <Step3 scanResult={scanResult} onConfirm={handleConfirm} />}
           {step === 4 && <Step4 onReset={handleReset} />}
         </div>
