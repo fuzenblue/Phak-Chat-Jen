@@ -32,12 +32,12 @@ app.use((req, res, next) => {
 });
 
 // ==================== Routes ====================
-app.use('/api/maps', mapsRoutes);
+app.use('/api/v1/maps', mapsRoutes);
 app.use('/api/v1/shops', shopsRoutes);
 app.use('/api/v1/posts', postsRoutes);
 app.use('/api/v1/scans', scansRoutes);
-app.use('/api/upload', uploadRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/v1/upload', uploadRoutes);
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/agent', agentRoutes);
 app.use('/api/v1/favorites', favoritesRoutes);
 // ==================== Health Check ====================
