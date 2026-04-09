@@ -4,6 +4,12 @@ import { isOpenNow } from '../utils/isOpenNow.js';
 
 const QWEN_API_KEY = process.env.QWEN_API_KEY;
 
+// เพิ่มบรรทัดนี้ท้ายไฟล์ก่อน startAgentLoop
+export async function runAgentOnce() {
+  console.log('[Agent] manual trigger:', new Date().toISOString());
+  await runAgentLoop();
+}
+
 // run every 1 hour
 export function startAgentLoop() {
   cron.schedule('0 * * * *', async () => {
@@ -159,3 +165,4 @@ ${recentActions.length ? recentActions.map(a => `- ${a.action_type}: ${JSON.stri
     return [];
   }
 }
+

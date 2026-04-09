@@ -195,4 +195,16 @@ function getFreshnessLabel(score) {
   return 'ควรเร่งขาย';
 }
 
+// POST /agent/trigger — manual trigger สำหรับทดสอบ
+import { runAgentOnce } from '../agent/loop.js';
+
+router.post('/trigger', requireAuth, async (req, res) => {
+  try {
+    await runAgentOnce();
+    res.json({ success: true, data: { message: 'Agent loop triggered' } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: err.message } });
+  }
+});
+
 export default router;
