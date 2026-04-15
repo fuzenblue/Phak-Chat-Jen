@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MerchantNavbar from '../components/MerchantNavbar';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 // ── Reusable Toggle ────────────────────────────────────────────────────
 function Toggle({ checked, onChange }) {
@@ -32,6 +34,7 @@ function Card({ children, className = '' }) {
 // ── Main Page ──────────────────────────────────────────────────────────
 export default function AgentSettingsPage() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [policy, setPolicy] = useState({
     active: false,
@@ -40,6 +43,43 @@ export default function AgentSettingsPage() {
   });
 
   const [toast, setToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('success');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [shopId, setShopId] = useState(null);
+
+  // Fetch shop and policy on mount
+  useEffect(() => {
+    const fetchPolicy = async () => {
+      try {
+        setLoading(true);
+        const shopRes = await api.get('shops/my-shop');
+        const sid = shopRes.data.data.id;
+        setShopId(sid);
+
+        const policyRes = await api.get(`agent/policy/${sid}`);
+        setPolicy(policyRes.data.data);
+      } catch (err) {
+        console.error('Failed to fetch policy:', err);
+        setToastMessage('ไม่สามารถโหลดข้อมูลได้');
+        setToastType('error');
+        setToast(true);
+        setTimeout(() => setToast(false), 3000);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPolicy();
+  }, []);
+
+  // Show toast with auto-hide
+  const showToast = (message, type = 'success') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToast(true);
+    setTimeout(() => setToast(false), 3000);
+  };
 
   // ── handlers ──────────────────────────────────────────────────────
   const handleToggleActive = (val) => {
@@ -57,15 +97,25 @@ export default function AgentSettingsPage() {
     setPolicy((prev) => ({ ...prev, auto_approve }));
   };
 
-  const handleSave = () => {
-    console.log(policy);
-    setToast(true);
-    setTimeout(() => setToast(false), 2500);
+  const handleSave = async () => {
+    if (!shopId) return;
+    
+    setSaving(true);
+    try {
+      await api.post(`agent/policy/${shopId}`, policy);
+      showToast('บันทึกการตั้งค่า Agent สำเร็จ!', 'success');
+    } catch (err) {
+      console.error('Failed to save policy:', err);
+      const errorMsg = err.response?.data?.error?.message || 'ไม่สามารถบันทึกข้อมูลได้';
+      showToast(errorMsg, 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // ── render ────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50 font-prompt">
+    <div className="min-h-screen bg-gray-50 font-sarabun">
       {/* Navbar */}
       <MerchantNavbar
         shopName="ตั้งค่า Agent"
@@ -79,14 +129,37 @@ export default function AgentSettingsPage() {
           toast ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
         }`}
       >
-        <div className="flex items-center gap-2 bg-green-500 text-white text-sm font-semibold px-5 py-2.5 rounded-2xl shadow-lg shadow-green-200">
-          <span className="material-symbols-outlined text-[18px]">check_circle</span>
-          บันทึกแล้ว
+        <div className={`flex items-center gap-2 text-white text-sm font-semibold px-5 py-2.5 rounded-2xl shadow-lg ${
+          toastType === 'success' ? 'bg-green-500 shadow-green-200' : 'bg-red-500 shadow-red-200'
+        }`}>
+          <span className="material-symbols-outlined text-[18px]">
+            {toastType === 'success' ? 'check_circle' : 'error'}
+          </span>
+          {toastMessage}
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-semibold text-sm transition"
+          >
+            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+            ย้อนกลับ
+          </button>
+          <h1 className="text-2xl font-black text-gray-900">ตั้งค่า Agent</h1>
+        </div>
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <div className="w-8 h-8 border-3 border-green-200 border-t-green-500 rounded-full animate-spin" />
+            <p className="text-sm text-gray-400">กำลังโหลดข้อมูล...</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+
 
         {/* ── Card 1: Toggle Agent ───────────────────────────────── */}
         <Card>
@@ -249,11 +322,20 @@ export default function AgentSettingsPage() {
         {/* ── Save Button ────────────────────────────────────────── */}
         <button
           onClick={handleSave}
-          className="w-full bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-green-100 flex items-center justify-center gap-2 text-sm"
+          disabled={saving}
+          className={`w-full text-white font-bold py-4 rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 text-sm mb-8 ${
+            saving 
+              ? 'bg-gray-300 cursor-not-allowed shadow-gray-100' 
+              : 'bg-green-500 hover:bg-green-600 active:scale-[0.98] shadow-green-100'
+          }`}
         >
-          <span className="material-symbols-outlined text-[20px]">save</span>
-          บันทึกการตั้งค่า
+          <span className="material-symbols-outlined text-[20px]">
+            {saving ? 'hourglass_empty' : 'save'}
+          </span>
+          {saving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า'}
         </button>
+          </div>
+        )}
 
       </div>
     </div>
