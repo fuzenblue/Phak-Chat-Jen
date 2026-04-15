@@ -98,7 +98,7 @@ export default function CustomerProfilePage() {
     if (!user) return;
     const fetchProfile = async () => {
       try {
-        const res = await api.get('/auth/me');
+        const res = await api.get('auth/me');
         const data = res.data.data;
         setProfile({
           display_name: data.display_name || '',
@@ -118,7 +118,7 @@ export default function CustomerProfilePage() {
   const handleSaveProfile = async () => {
     setSavingProfile(true);
     try {
-      await api.patch('/auth/profile', {
+      await api.patch('auth/profile', {
         display_name: profile.display_name || undefined,
         avatar_url: profile.avatar_url || undefined,
       });
@@ -147,7 +147,7 @@ export default function CustomerProfilePage() {
     try {
       const formData = new FormData();
       formData.append('image', file);
-      const res = await fetch('/api/upload', {
+      const res = await fetch('/api/v1/upload', {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: formData,
@@ -157,7 +157,7 @@ export default function CustomerProfilePage() {
 
       // Save URL to profile state and immediately persist
       setProfile(p => ({ ...p, avatar_url: data.url }));
-      await api.patch('/auth/profile', { avatar_url: data.url });
+      await api.patch('auth/profile', { avatar_url: data.url });
       updateUser({ avatar_url: data.url });
       showToast('อัปโหลดรูปโพรไฟล์สำเร็จ');
     } catch (err) {
@@ -186,7 +186,7 @@ export default function CustomerProfilePage() {
     }
     setSavingPassword(true);
     try {
-      await api.patch('/auth/password', {
+      await api.patch('auth/password', {
         current_password: pwForm.current_password,
         new_password: pwForm.new_password,
       });

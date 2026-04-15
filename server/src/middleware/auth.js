@@ -6,7 +6,7 @@ export function requireAuth(req, res, next) {
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({
       success: false,
-      error: { code: 'UNAUTHORIZED', message: 'Please login first' }
+      error: { code: 'UNAUTHORIZED', message: 'กรุณาเข้าสู่ระบบก่อน' }
     });
   }
 
@@ -19,7 +19,7 @@ export function requireAuth(req, res, next) {
   } catch {
     return res.status(401).json({
       success: false,
-      error: { code: 'UNAUTHORIZED', message: 'Token is expired or invalid' }
+      error: { code: 'UNAUTHORIZED', message: 'Token หมดอายุหรือไม่ถูกต้อง' }
     });
   }
 }

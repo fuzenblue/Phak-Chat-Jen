@@ -162,7 +162,7 @@ router.get('/me', async (req, res) => {
 // ─────────────────────────────────────────
 router.patch('/profile', async (req, res) => {
   const auth = getAuthUser(req);
-  if (!auth) return res.status(401).json({ message: 'Unauthorized' });
+  if (!auth) return res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } });
 
   const { display_name, avatar_url } = req.body;
 
@@ -179,7 +179,7 @@ router.patch('/profile', async (req, res) => {
     res.json({ success: true, data: rows[0] });
   } catch (err) {
     console.error('[PATCH /profile]', err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Server error' } });
   }
 });
 
@@ -188,30 +188,30 @@ router.patch('/profile', async (req, res) => {
 // ─────────────────────────────────────────
 router.patch('/password', async (req, res) => {
   const auth = getAuthUser(req);
-  if (!auth) return res.status(401).json({ message: 'Unauthorized' });
+  if (!auth) return res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } });
 
   const { current_password, new_password } = req.body;
   if (!current_password || !new_password) {
-    return res.status(400).json({ message: 'กรุณากรอกรหัสผ่านให้ครบ' });
+    return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'กรุณากรอกรหัสผ่านให้ครบ' } });
   }
-  if (new_password.length < 6) {
-    return res.status(400).json({ message: 'รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร' });
+  if (new_password.length < 8) {
+    return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร' } });
   }
 
   try {
     const { rows } = await pool.query('SELECT password_hash FROM users WHERE id = $1', [auth.id]);
-    if (rows.length === 0) return res.status(404).json({ message: 'User not found' });
+    if (rows.length === 0) return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'User not found' } });
 
     const isMatch = await bcrypt.compare(current_password, rows[0].password_hash);
-    if (!isMatch) return res.status(401).json({ message: 'รหัสผ่านเดิมไม่ถูกต้อง' });
+    if (!isMatch) return res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'รหัสผ่านเดิมไม่ถูกต้อง' } });
 
     const hashed = await bcrypt.hash(new_password, 10);
     await pool.query('UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2', [hashed, auth.id]);
 
-    res.json({ success: true, message: 'เปลี่ยนรหัสผ่านสำเร็จ' });
+    res.json({ success: true, data: { message: 'เปลี่ยนรหัสผ่านสำเร็จ' } });
   } catch (err) {
     console.error('[PATCH /password]', err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Server error' } });
   }
 });
 
