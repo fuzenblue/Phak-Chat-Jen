@@ -35,7 +35,7 @@ export default function MapPage() {
     useEffect(() => {
         const fetchShops = async () => {
             try {
-                const response = await api.get('/v1/shops');
+                const response = await api.get('shops');
                 setShops(response.data.data);
             } catch (err) {
                 console.error('Fetch shops failed:', err);

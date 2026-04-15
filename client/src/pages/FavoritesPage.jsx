@@ -27,7 +27,7 @@ export default function FavoritesPage() {
     const fetchFavorites = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/v1/favorites');
+        const response = await api.get('favorites');
         setFavorites(response.data.data);
       } catch (err) {
         console.error('Fetch favorites failed:', err);
@@ -45,7 +45,7 @@ export default function FavoritesPage() {
     // Optimistically remove from UI first
     setFavorites(prev => prev.filter(f => f.id !== favoriteEntry.id));
     try {
-      await api.delete(`/v1/favorites/${favoriteEntry.shop.id}`);
+      await api.delete(`favorites/${favoriteEntry.shop.id}`);
     } catch (err) {
       console.error('Remove favorite failed:', err);
       // Restore on failure

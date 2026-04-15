@@ -83,7 +83,7 @@ const Step2 = ({ onAnalyze, selectedCat, images, setImages, basePrice, setBasePr
       formData.append('original_price', basePrice);
       formData.append('description', desc);
 
-      const response = await api.post('v1/scans', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const response = await api.post('scans', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       onAnalyze({ ...response.data.data, basePrice, unit, desc });
     } catch (err) {
       alert("เกิดข้อผิดพลาดในการวิเคราะห์รูปภาพ");
@@ -160,7 +160,7 @@ const Step3 = ({ scanResult, onConfirm }) => {
         expired_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
         status: 'active'
       };
-      await api.post('v1/posts', payload);
+      await api.post('posts', payload);
       onConfirm();
     } catch (err) { alert("ล้มเหลว"); } finally { setLoading(false); }
   };

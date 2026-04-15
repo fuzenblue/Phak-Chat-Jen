@@ -117,7 +117,7 @@ export default function StoreSetup() {
   useEffect(() => {
     const init = async () => {
         try {
-            const res = await api.get('v1/shops/my-shop');
+            const res = await api.get('shops/my-shop');
             const s = res.data.data;
             setStoreName(s.shop_name || "");
             setStoreDesc(s.description || "");

@@ -38,11 +38,11 @@ export default function MyProductsPage() {
         setError(null);
 
         // ดึงข้อมูลร้านค้า 
-        const shopRes = await api.get('v1/shops/my-shop');
+        const shopRes = await api.get('shops/my-shop');
         const shopInfo = shopRes.data.data || shopRes.data;
         setShopData(shopInfo);
         // ดึงข้อมูลสินค้าทั้งหมดของร้าน
-        const response = await api.get('v1/posts/my-shop');
+        const response = await api.get('posts/my-shop');
         
         const mappedData = response.data.data.map(p => ({
           id: p.id,
@@ -82,7 +82,7 @@ export default function MyProductsPage() {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`v1/posts/${id}`);
+      await api.delete(`posts/${id}`);
       setProducts((prev) => prev.filter((p) => p.id !== id));
       setDeleteId(null);
     } catch (err) {

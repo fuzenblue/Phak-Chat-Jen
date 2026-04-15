@@ -147,13 +147,8 @@ export default function CustomerProfilePage() {
     try {
       const formData = new FormData();
       formData.append('image', file);
-      const res = await fetch('/api/v1/upload', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        body: formData,
-      });
-      if (!res.ok) throw new Error('Upload failed');
-      const data = await res.json();
+      const res = await api.post('upload', formData);
+      const data = res.data;
 
       // Save URL to profile state and immediately persist
       setProfile(p => ({ ...p, avatar_url: data.url }));
