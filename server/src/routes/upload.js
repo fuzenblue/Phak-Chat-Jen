@@ -26,7 +26,7 @@ const upload = multer({
 router.post('/', upload.single('image'), async (req, res) => {
     try {
         if (!req.file) {
-            return res.status(400).json({ error: 'No image file provided' });
+            return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'No image file provided' } });
         }
 
         // Upload to Cloudinary via stream
@@ -45,16 +45,19 @@ router.post('/', upload.single('image'), async (req, res) => {
         });
 
         res.json({
-            url: result.secure_url,
-            public_id: result.public_id,
-            width: result.width,
-            height: result.height,
-            format: result.format,
-            size: result.bytes,
+            success: true,
+            data: {
+                url: result.secure_url,
+                public_id: result.public_id,
+                width: result.width,
+                height: result.height,
+                format: result.format,
+                size: result.bytes,
+            },
         });
     } catch (error) {
         console.error('Upload Error:', error.message);
-        res.status(500).json({ error: 'Failed to upload image', details: error.message });
+        res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Failed to upload image' } });
     }
 });
 
@@ -65,12 +68,12 @@ router.post('/', upload.single('image'), async (req, res) => {
 router.delete('/:publicId', async (req, res) => {
     try {
         const { publicId } = req.params;
-        const result = await cloudinary.uploader.destroy(`phakchatjen/${publicId}`);
+        await cloudinary.uploader.destroy(`phakchatjen/${publicId}`);
 
-        res.json({ message: 'Image deleted', result });
+        res.json({ success: true, data: { message: 'Image deleted successfully' } });
     } catch (error) {
         console.error('Delete Error:', error.message);
-        res.status(500).json({ error: 'Failed to delete image', details: error.message });
+        res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Failed to delete image' } });
     }
 });
 

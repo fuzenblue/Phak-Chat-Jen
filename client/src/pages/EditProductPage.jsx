@@ -24,7 +24,7 @@ export default function EditProductPage() {
       try {
         setLoading(true);
         // เรียกไปที่ /v1/posts/:id ตามโครงสร้างตาราง posts
-        const response = await api.get(`v1/posts/${id}`);
+        const response = await api.get(`posts/${id}`);
         const data = response.data.data;
         
         setProduct(data);
@@ -61,7 +61,7 @@ export default function EditProductPage() {
       };
 
       // ยิง PATCH ไปที่ API ของเพื่อน
-      await api.patch(`v1/posts/${id}`, payload);
+      await api.patch(`posts/${id}`, payload);
       setShowSuccess(true);
     } catch (err) {
       console.error("Error saving product:", err);
@@ -75,7 +75,7 @@ export default function EditProductPage() {
   const handleDelete = async () => {
     if (!window.confirm("คุณต้องการลบสินค้านี้ใช่หรือไม่?")) return;
     try {
-      await api.delete(`v1/posts/${id}`);
+      await api.delete(`posts/${id}`);
       navigate("/merchant/dashboard");
     } catch (err) {
       alert("ลบไม่สำเร็จ");

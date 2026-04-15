@@ -117,7 +117,7 @@ export default function StoreSetup() {
   useEffect(() => {
     const init = async () => {
         try {
-            const res = await api.get('v1/shops/my-shop');
+            const res = await api.get('shops/my-shop');
             const s = res.data.data;
             setStoreName(s.shop_name || "");
             setStoreDesc(s.description || "");
@@ -212,9 +212,9 @@ export default function StoreSetup() {
 
       // 2. Save or Update shop
       if (existingShopId) {
-        await api.patch(`v1/shops/${existingShopId}`, payload);
+        await api.patch(`shops/${existingShopId}`, payload);
       } else {
-        await api.post('v1/shops', payload);
+        await api.post('shops', payload);
       }
 
       setSavedShopName(storeName);

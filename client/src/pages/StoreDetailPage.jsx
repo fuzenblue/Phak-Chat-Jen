@@ -19,7 +19,7 @@ export default function StoreDetailPage() {
     const fetchShop = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`v1/shops/${id}`);
+        const response = await api.get(`shops/${id}`);
         setShop(response.data.data);
       } catch (err) {
         console.error("Fetch shop failed:", err);
@@ -36,7 +36,7 @@ export default function StoreDetailPage() {
     if (!user || !id) return;
     const checkFavorite = async () => {
       try {
-        const res = await api.get(`/v1/favorites/check/${id}`);
+        const res = await api.get(`favorites/check/${id}`);
         setIsFavorited(res.data.data.is_favorited);
       } catch (err) {
         console.error('Check favorite failed:', err);
@@ -80,10 +80,10 @@ export default function StoreDetailPage() {
     try {
       if (!prev) {
         // Adding to favorites
-        await api.post('/v1/favorites', { shop_id: id });
+        await api.post('favorites', { shop_id: id });
       } else {
         // Removing from favorites
-        await api.delete(`/v1/favorites/${id}`);
+        await api.delete(`favorites/${id}`);
       }
     } catch (err) {
       console.error('Toggle favorite failed:', err);

@@ -16,12 +16,13 @@ router.get('/search', async (req, res) => {
         const { query } = req.query;
 
         if (!query) {
-            return res.status(400).json({ error: 'Search query is required' });
+            return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Search query is required' } });
         }
 
         if (!MAPS_API_KEY) {
             return res.status(500).json({
-                error: 'Google Maps API key is not configured. Please set GOOGLE_MAPS_API_KEY in .env file.',
+                success: false,
+                error: { code: 'SERVER_ERROR', message: 'Google Maps API key is not configured' },
             });
         }
 
@@ -29,10 +30,10 @@ router.get('/search', async (req, res) => {
         const response = await fetch(url);
         const data = await response.json();
 
-        res.json(data);
+        res.json({ success: true, data });
     } catch (error) {
-        console.error('❌ Maps Search Error:', error.message);
-        res.status(500).json({ error: 'Failed to search places', details: error.message });
+        console.error('Maps Search Error:', error.message);
+        res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Failed to search places' } });
     }
 });
 
@@ -45,17 +46,17 @@ router.get('/place/:placeId', async (req, res) => {
         const { placeId } = req.params;
 
         if (!MAPS_API_KEY) {
-            return res.status(500).json({ error: 'Google Maps API key is not configured.' });
+            return res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Google Maps API key is not configured' } });
         }
 
         const url = `${MAPS_BASE_URL}/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}&language=th`;
         const response = await fetch(url);
         const data = await response.json();
 
-        res.json(data);
+        res.json({ success: true, data });
     } catch (error) {
-        console.error('❌ Place Details Error:', error.message);
-        res.status(500).json({ error: 'Failed to get place details', details: error.message });
+        console.error('Place Details Error:', error.message);
+        res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Failed to get place details' } });
     }
 });
 
@@ -68,21 +69,21 @@ router.get('/directions', async (req, res) => {
         const { origin, destination, mode = 'driving' } = req.query;
 
         if (!origin || !destination) {
-            return res.status(400).json({ error: 'Origin and destination are required' });
+            return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Origin and destination are required' } });
         }
 
         if (!MAPS_API_KEY) {
-            return res.status(500).json({ error: 'Google Maps API key is not configured.' });
+            return res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Google Maps API key is not configured' } });
         }
 
         const url = `${MAPS_BASE_URL}/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=${mode}&key=${MAPS_API_KEY}&language=th`;
         const response = await fetch(url);
         const data = await response.json();
 
-        res.json(data);
+        res.json({ success: true, data });
     } catch (error) {
-        console.error('❌ Directions Error:', error.message);
-        res.status(500).json({ error: 'Failed to get directions', details: error.message });
+        console.error('Directions Error:', error.message);
+        res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Failed to get directions' } });
     }
 });
 
@@ -95,21 +96,21 @@ router.get('/geocode', async (req, res) => {
         const { address } = req.query;
 
         if (!address) {
-            return res.status(400).json({ error: 'Address is required' });
+            return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Address is required' } });
         }
 
         if (!MAPS_API_KEY) {
-            return res.status(500).json({ error: 'Google Maps API key is not configured.' });
+            return res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Google Maps API key is not configured' } });
         }
 
         const url = `${MAPS_BASE_URL}/geocode/json?address=${encodeURIComponent(address)}&key=${MAPS_API_KEY}&language=th`;
         const response = await fetch(url);
         const data = await response.json();
 
-        res.json(data);
+        res.json({ success: true, data });
     } catch (error) {
-        console.error('❌ Geocode Error:', error.message);
-        res.status(500).json({ error: 'Failed to geocode address', details: error.message });
+        console.error('Geocode Error:', error.message);
+        res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Failed to geocode address' } });
     }
 });
 

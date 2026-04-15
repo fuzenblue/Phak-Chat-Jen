@@ -1,60 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MerchantNavbar from '../components/MerchantNavbar';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
-// ── Mock Data ──────────────────────────────────────────────────────────
-const MOCK_ACTIONS = [
-  {
-    id: 'aa-001',
-    action_type: 'price_update',
-    old_value: { price: 35 },
-    new_value: { price: 25 },
-    reason: 'เหลือ 1.5 ชั่วโมงก่อนปิดร้าน ความสด 52/100 แนะนำลด 28%',
-    status: 'pending',
-    created_at: new Date().toISOString(),
-    post_snapshot: {
-      veg_type: 'ผักกาดขาว',
-      image_url: 'https://images.unsplash.com/photo-1550143813-fdf696803212?w=200',
-      freshness_score: 52,
-      freshness_label: 'ใกล้หมด',
-      current_price: 35,
-    }
-  },
-  {
-    id: 'aa-002',
-    action_type: 'price_update',
-    old_value: { price: 40 },
-    new_value: { price: 32 },
-    reason: 'ความสด 75/100 ลดเล็กน้อยเพื่อเร่งยอดขาย',
-    status: 'executed',
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    post_snapshot: {
-      veg_type: 'มะเขือเทศ',
-      image_url: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=200',
-      freshness_score: 75,
-      freshness_label: 'สด',
-      current_price: 32,
-    }
-  },
-  {
-    id: 'aa-003',
-    action_type: 'mark_sold_out',
-    old_value: { price: 20 },
-    new_value: { price: 20 },
-    reason: 'ความสด 28/100 ควรปิดรายการนี้',
-    status: 'rejected',
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-    post_snapshot: {
-      veg_type: 'คะน้า',
-      image_url: 'https://images.unsplash.com/photo-1550143813-fdf696803212?w=200',
-      freshness_score: 28,
-      freshness_label: 'ควรเร่งขาย',
-      current_price: 20,
-    }
-  }
-];
-
-// ── Helpers ────────────────────────────────────────────────────────────
+// Helpers
 function relativeTime(isoString) {
   const diffMs = Date.now() - new Date(isoString).getTime();
   const diffMin = Math.floor(diffMs / 60000);
@@ -93,7 +42,7 @@ function StatusBadge({ status }) {
   );
 }
 
-// ── Tab config ─────────────────────────────────────────────────────────
+// Tab config
 const TABS = [
   { key: 'all',      label: 'ทั้งหมด' },
   { key: 'pending',  label: 'รออนุมัติ' },
@@ -106,7 +55,7 @@ function filterActions(actions, tab) {
   return actions;
 }
 
-// ── Action Card ────────────────────────────────────────────────────────
+// Action Card
 function ActionCard({ action, onApprove, onReject }) {
   const { post_snapshot: snap, action_type, old_value, new_value, reason, status, created_at } = action;
 
@@ -181,27 +130,66 @@ function ActionCard({ action, onApprove, onReject }) {
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────────────────
+// Main Page
 export default function AgentActivityPage() {
   const { user, logout } = useAuth();
 
-  const [actions, setActions] = useState(MOCK_ACTIONS);
+  const [actions, setActions] = useState([]);
+  const [shopId, setShopId] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
 
-  const handleApprove = (id) => {
-    setActions((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: 'executed' } : a))
-    );
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const meRes = await api.get('auth/me');
+        const sid = meRes.data.data.shop_id;
+        setShopId(sid);
+        if (sid) {
+          const res = await api.get(`agent/actions/${sid}`);
+          setActions(res.data.data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const handleApprove = async (id) => {
+    try {
+      await api.patch(`agent/actions/${id}`, { status: 'executed' });
+      setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'executed' } : a));
+    } catch (err) {
+      alert('ไม่สามารถอนุมัติได้');
+    }
   };
 
-  const handleReject = (id) => {
-    setActions((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: 'rejected' } : a))
-    );
+  const handleReject = async (id) => {
+    try {
+      await api.patch(`agent/actions/${id}`, { status: 'rejected' });
+      setActions(prev => prev.map(a => a.id === id ? { ...a, status: 'rejected' } : a));
+    } catch (err) {
+      alert('ไม่สามารถปฏิเสธได้');
+    }
   };
 
   const filtered = filterActions(actions, activeTab);
   const pendingCount = actions.filter((a) => a.status === 'pending').length;
+
+  if (loading) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-green-200 border-t-green-500 rounded-full animate-spin" />
+    </div>
+  );
+
+  if (!shopId) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <p className="text-gray-400 text-sm">ยังไม่มีร้านค้า</p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 font-prompt">

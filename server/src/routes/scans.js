@@ -93,12 +93,12 @@ async function analyzeWithQwen(imageUrl, vegType) {
             {
               type: 'text',
               text: `วิเคราะห์ความสดของ "${vegType}" ในรูปนี้ แล้วตอบกลับเป็น JSON เท่านั้น ห้ามมีข้อความอื่น:
-{
-  "freshness_score": <0-100>,
-  "summary": "<สรุปสภาพผักใน 1-2 ประโยค>",
-  "estimated_shelf_life_days": <จำนวนวัน>,
-  "recommended_discount_percent": <0-80>
-}`
+              {
+                "freshness_score": <0-100>,
+                "summary": "<สรุปสภาพผักใน 1-2 ประโยค>",
+                "estimated_shelf_life_days": <จำนวนวัน>,
+                "recommended_discount_percent": <0-80>
+              }`
             }
           ]
         }

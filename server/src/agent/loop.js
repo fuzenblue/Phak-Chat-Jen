@@ -116,52 +116,61 @@ async function processShop(policy) {
 
 async function askAgent({ shop, posts, recentActions, max_discount }) {
   const prompt = `
-คุณคือ AI agent ดูแลร้านผักชื่อ "${shop.shop_name}"
-เวลาปัจจุบัน: ${new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}
+    คุณคือ AI agent ดูแลร้านผักชื่อ "${shop.shop_name}"
+    เวลาปัจจุบัน: ${new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}
 
-สินค้าที่ active อยู่:
-${posts.map(p => `- id: ${p.id}, ผัก: ${p.veg_type}, ราคาปัจจุบัน: ${p.price}, ราคาตั้งต้น: ${p.original_price}, ความสด: ${p.freshness_score}/100`).join('\n')}
+    สินค้าที่ active อยู่:
+    ${posts.map(p => `- id: ${p.id}, ผัก: ${p.veg_type}, ราคาปัจจุบัน: ${p.price}, ราคาตั้งต้น: ${p.original_price}, ความสด: ${p.freshness_score}/100`).join('\n')}
 
-action ล่าสุดของร้านนี้:
-${recentActions.length ? recentActions.map(a => `- ${a.action_type}: ${JSON.stringify(a.new_value)} เพราะ "${a.reason}"`).join('\n') : 'ยังไม่มี'}
+    action ล่าสุดของร้านนี้:
+    ${recentActions.length ? recentActions.map(a => `- ${a.action_type}: ${JSON.stringify(a.new_value)} เพราะ "${a.reason}"`).join('\n') : 'ยังไม่มี'}
 
-กฎ: ลดราคาได้สูงสุด ${max_discount}% จากราคาตั้งต้น
+    กฎ: ลดราคาได้สูงสุด ${max_discount}% จากราคาตั้งต้น
 
-วิเคราะห์และตัดสินใจว่าควร action อะไร ตอบเป็น JSON array เท่านั้น:
-[
-  {
-    "post_id": "...",
-    "action_type": "price_update" | "mark_sold_out" | "none",
-    "new_price": <number หรือ null ถ้าไม่ใช่ price_update>,
-    "reason": "<เหตุผลสั้นๆ ภาษาไทย>"
-  }
-]
-ถ้าไม่ต้อง action อะไรให้คืน []
+    วิเคราะห์และตัดสินใจว่าควร action อะไร ตอบเป็น JSON array เท่านั้น:
+    [
+      {
+        "post_id": "...",
+        "action_type": "price_update" | "mark_sold_out" | "none",
+        "new_price": <number หรือ null ถ้าไม่ใช่ price_update>,
+        "reason": "<เหตุผลสั้นๆ ภาษาไทย>"
+      }
+    ]
+    ถ้าไม่ต้อง action อะไรให้คืน []
 `;
 
-  const response = await fetch('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${QWEN_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'qwen-vl-max',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 1000,
-    })
-  });
-
-  const data = await response.json();
-  const text = data.choices[0].message.content;
-  const cleaned = text.replace(/```json|```/g, '').trim();
-
   try {
-    const decisions = JSON.parse(cleaned);
-    // filter only not none
-    return decisions.filter(d => d.action_type !== 'none');
-  } catch {
-    console.error('[Agent] parse error:', cleaned);
+    const response = await fetch('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${QWEN_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'qwen-vl-max',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 1000,
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`AI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const text = data.choices[0].message.content;
+    const cleaned = text.replace(/```json|```/g, '').trim();
+
+    try {
+      const decisions = JSON.parse(cleaned);
+      // filter only not none
+      return decisions.filter(d => d.action_type !== 'none');
+    } catch {
+      console.error('[Agent] parse error:', cleaned);
+      return [];
+    }
+  } catch (err) {
+    console.error('[Agent] askAgent error:', err.message);
     return [];
   }
 }
