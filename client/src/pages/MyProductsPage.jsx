@@ -135,6 +135,13 @@ export default function MyProductsPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => navigate("/dashboard/agent")}
+              className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition"
+              title="AI Agent Settings"
+            >
+              <span className="material-symbols-outlined text-blue-500">smart_toy</span>
+            </button>
+            <button
               onClick={() => navigate("/dashboard/setup")}
               className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition"
               title="ตั้งค่าร้านค้า"
