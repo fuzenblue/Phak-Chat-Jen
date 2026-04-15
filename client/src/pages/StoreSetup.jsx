@@ -212,9 +212,9 @@ export default function StoreSetup() {
 
       // 2. Save or Update shop
       if (existingShopId) {
-        await api.patch(`v1/shops/${existingShopId}`, payload);
+        await api.patch(`shops/${existingShopId}`, payload);
       } else {
-        await api.post('v1/shops', payload);
+        await api.post('shops', payload);
       }
 
       setSavedShopName(storeName);

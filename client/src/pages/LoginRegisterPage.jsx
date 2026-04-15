@@ -34,9 +34,9 @@ export default function LoginRegisterPage() {
         try {
             const response = await api.post('auth/login', { email, password });
             
-            if (response.data.token) {
-                login(response.data.user, response.data.token);
-                const role = response.data.user?.role;
+            if (response.data.data?.token) {
+                login(response.data.data.user, response.data.data.token);
+                const role = response.data.data.user?.role;
                 if (role === 'merchant') {
                     navigate('/dashboard');
                 } else {
@@ -73,8 +73,8 @@ export default function LoginRegisterPage() {
                 password: regPassword,
             });
 
-            if (loginRes.data.token) {
-                login(loginRes.data.user, loginRes.data.token);
+            if (loginRes.data.data?.token) {
+                login(loginRes.data.data.user, loginRes.data.data.token);
                 if (regRole === 'merchant') {
                     navigate('/dashboard/setup');
                 } else {

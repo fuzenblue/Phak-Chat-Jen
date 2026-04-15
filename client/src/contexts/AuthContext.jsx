@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
 
         try {
           // Sync fresh profile data from DB softly
-          const res = await api.get('/auth/me');
+          const res = await api.get('auth/me');
           const fullUser = { ...parsedUser, ...res.data.data };
           setUser(fullUser);
           localStorage.setItem('user', JSON.stringify(fullUser));
