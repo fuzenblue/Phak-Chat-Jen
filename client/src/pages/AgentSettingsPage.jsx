@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MerchantNavbar from '../components/MerchantNavbar';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
@@ -33,6 +34,7 @@ function Card({ children, className = '' }) {
 // ── Main Page ──────────────────────────────────────────────────────────
 export default function AgentSettingsPage() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [policy, setPolicy] = useState({
     active: false,
@@ -113,7 +115,7 @@ export default function AgentSettingsPage() {
 
   // ── render ────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50 font-prompt">
+    <div className="min-h-screen bg-gray-50 font-sarabun">
       {/* Navbar */}
       <MerchantNavbar
         shopName="ตั้งค่า Agent"
@@ -138,7 +140,17 @@ export default function AgentSettingsPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-semibold text-sm transition"
+          >
+            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+            ย้อนกลับ
+          </button>
+          <h1 className="text-2xl font-black text-gray-900">ตั้งค่า Agent</h1>
+        </div>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -146,7 +158,7 @@ export default function AgentSettingsPage() {
             <p className="text-sm text-gray-400">กำลังโหลดข้อมูล...</p>
           </div>
         ) : (
-          <>
+          <div className="space-y-3">
 
 
         {/* ── Card 1: Toggle Agent ───────────────────────────────── */}
@@ -311,7 +323,7 @@ export default function AgentSettingsPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className={`w-full text-white font-bold py-4 rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 text-sm ${
+          className={`w-full text-white font-bold py-4 rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 text-sm mb-8 ${
             saving 
               ? 'bg-gray-300 cursor-not-allowed shadow-gray-100' 
               : 'bg-green-500 hover:bg-green-600 active:scale-[0.98] shadow-green-100'
@@ -322,7 +334,7 @@ export default function AgentSettingsPage() {
           </span>
           {saving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า'}
         </button>
-          </>
+          </div>
         )}
 
       </div>

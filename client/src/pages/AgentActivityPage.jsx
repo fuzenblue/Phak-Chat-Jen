@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MerchantNavbar from '../components/MerchantNavbar';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
@@ -133,6 +134,7 @@ function ActionCard({ action, onApprove, onReject }) {
 // Main Page
 export default function AgentActivityPage() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [actions, setActions] = useState([]);
   const [shopId, setShopId] = useState(null);
@@ -192,7 +194,7 @@ export default function AgentActivityPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 font-prompt">
+    <div className="min-h-screen bg-gray-50 font-sarabun">
       {/* Navbar */}
       <MerchantNavbar
         shopName="Activity Agent"
@@ -200,36 +202,52 @@ export default function AgentActivityPage() {
         onLogout={logout}
       />
 
+      {/* Header - Page Title with Back Button */}
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between">
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-semibold text-sm transition"
+          >
+            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+            ย้อนกลับ
+          </button>
+          <h1 className="text-2xl font-black text-gray-900">Activity Agent</h1>
+        </div>
+      </div>
+
       {/* Filter Tabs */}
-      <div className="bg-white border-b border-gray-100 sticky top-14 z-10">
-        <div className="max-w-2xl mx-auto px-4 flex">
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`relative py-3.5 px-4 text-sm font-semibold transition-colors flex items-center gap-1.5 ${
-                  isActive
-                    ? 'border-b-2 border-green-500 text-green-600'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                {tab.label}
-                {/* Badge count for pending tab */}
-                {tab.key === 'pending' && pendingCount > 0 && (
-                  <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold rounded-full bg-yellow-400 text-white leading-none">
-                    {pendingCount}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+      <div className="sticky top-14 z-10 py-4 bg-gray-50 border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="bg-gray-100 rounded-2xl p-1 flex gap-1">
+            {TABS.map((tab) => {
+              const isActive = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                    isActive
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {tab.label}
+                  {/* Badge count for pending tab */}
+                  {tab.key === 'pending' && pendingCount > 0 && (
+                    <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold rounded-full bg-yellow-400 text-white leading-none">
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+              );
+              })}
+          </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto px-4 py-5 space-y-3">
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-3">
 
         {/* Summary bar (all tab only) */}
         {activeTab === 'all' && (
@@ -264,6 +282,8 @@ export default function AgentActivityPage() {
             onReject={handleReject}
           />
         ))}
+
+
       </div>
     </div>
   );

@@ -236,7 +236,7 @@ export default function StoreSetup() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sarabun text-gray-800">
+    <div className="min-h-screen bg-gray-50 font-prompt text-gray-800">
       <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 
@@ -270,7 +270,19 @@ export default function StoreSetup() {
         onLogout={logout} 
       />
 
-      <div className="max-w-lg mx-auto px-4 py-5 space-y-4 pt-16">
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-semibold text-sm transition"
+          >
+            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+            ย้อนกลับ
+          </button>
+          <h1 className="text-2xl font-black text-gray-900">ตั้งค่าร้านค้า</h1>
+        </div>
+
+        <div className="space-y-3">
         <Card title="ข้อมูลร้าน" icon={<span className="material-symbols-outlined text-[20px]">storefront</span>}>
           <div className="space-y-4">
             <div>
@@ -370,6 +382,7 @@ export default function StoreSetup() {
           {loading && <span className="animate-spin material-symbols-outlined text-[18px]">progress_activity</span>}
           {existingShopId ? "อัปเดตข้อมูลร้าน" : "สร้างร้านค้า"}
         </button>
+        </div>
       </div>
     </div>
   );

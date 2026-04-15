@@ -22,6 +22,7 @@ export default function MyProductsPage() {
   const [error, setError]         = useState(null);
   const [activeTab, setActiveTab] = useState("all");
   const [deleteId, setDeleteId]   = useState(null);
+  const [pendingCount, setPendingCount] = useState(0);
 
   //1. ป้องกันการเข้าถึงโดยไม่ Login (แก้ปัญหากด Back แล้วยังเข้าได้)
   useEffect(() => {
@@ -79,6 +80,24 @@ export default function MyProductsPage() {
     if (token) { fetchData(); }
   }, [token, navigate, location]);
 
+  // 3. ดึงข้อมูลจำนวน pending actions สำหรับ notification badge
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const meRes = await api.get('auth/me');
+        const shopId = meRes.data.data.shop_id;
+        if (shopId) {
+          const res = await api.get(`agent/actions/${shopId}`);
+          const pending = res.data.data.filter((a) => a.status === 'pending').length;
+          setPendingCount(pending);
+        }
+      } catch (err) {
+        console.error('Error fetching pending actions:', err);
+      }
+    };
+
+    if (token) { fetchPendingCount(); }
+  }, [token]);
 
   const handleDelete = async (id) => {
     try {
@@ -113,7 +132,7 @@ export default function MyProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ fontFamily: "'Sarabun', sans-serif" }}>
+    <div className="min-h-screen bg-gray-50 font-sarabun" style={{}}>
       <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
       
@@ -134,6 +153,17 @@ export default function MyProductsPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate("/dashboard/agent/activity")}
+              className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition relative"
+              title="Agent Activity"
+            >
+              <span className="material-symbols-outlined text-purple-500">notifications</span>
+              {/* Badge - show only when there are pending actions */}
+              {pendingCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">!</span>
+              )}
+            </button>
             <button
               onClick={() => navigate("/dashboard/agent")}
               className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition"
