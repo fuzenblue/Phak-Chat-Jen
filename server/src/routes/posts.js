@@ -67,7 +67,7 @@ router.get('/my-shop', requireAuth, async (req, res) => {
 
 // POST /posts — post product
 router.post('/', requireAuth, async (req, res) => {
-  const { scan_id, price, original_price, quantity, expired_at } = req.body;
+  const { scan_id, price, original_price, quantity, description, expired_at } = req.body;
   const user_id = req.user.id;
 
   try {
@@ -82,9 +82,9 @@ router.post('/', requireAuth, async (req, res) => {
     const shop_id = shopResult.rows[0].id;
 
     const result = await pool.query(
-      `INSERT INTO posts (scan_id, shop_id, price, original_price, quantity, expired_at)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [scan_id, shop_id, price, original_price, quantity ?? 1, expired_at]
+      `INSERT INTO posts (scan_id, shop_id, price, original_price, quantity, description, expired_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [scan_id, shop_id, price, original_price, quantity ?? 1, description || "", expired_at]
     );
 
     res.status(201).json({ success: true, data: result.rows[0] });
@@ -129,6 +129,7 @@ router.get('/:id', requireAuth, async (req, res) => {
         original_price: p.original_price,
         recommended_price: p.original_price,
         quantity: p.quantity,
+        description: p.description,
         status: p.status,
         freshness_score: p.freshness_score,
         expired_at: p.expired_at,
@@ -145,7 +146,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 // PATCH /posts/:id — edit post
 router.patch('/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const { price, quantity, status } = req.body;
+  const { price, quantity, status, description } = req.body;
   const user_id = req.user.id;
 
   try {
@@ -167,9 +168,10 @@ router.patch('/:id', requireAuth, async (req, res) => {
     const values = [];
     let i = 1;
 
-    if (price !== undefined)    { fields.push(`price=$${i++}`);    values.push(price); }
-    if (quantity !== undefined) { fields.push(`quantity=$${i++}`); values.push(quantity); }
-    if (status !== undefined)   { fields.push(`status=$${i++}`);   values.push(status); }
+    if (price !== undefined)       { fields.push(`price=$${i++}`);       values.push(price); }
+    if (quantity !== undefined)    { fields.push(`quantity=$${i++}`);    values.push(quantity); }
+    if (status !== undefined)      { fields.push(`status=$${i++}`);      values.push(status); }
+    if (description !== undefined) { fields.push(`description=$${i++}`); values.push(description); }
 
     if (fields.length === 0) {
       return res.status(422).json({

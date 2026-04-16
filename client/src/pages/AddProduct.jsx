@@ -1,6 +1,8 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import MerchantNavbar from "../components/MerchantNavbar";
 import api from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 const CATEGORIES = [
   { id: 1, emoji: "🥬", name: "ผักกาด" }, { id: 2, emoji: "🍅", name: "มะเขือเทศ" },
@@ -11,7 +13,7 @@ const CATEGORIES = [
   { id: 18, emoji: "🥬", name: "ใบกระเพรา" }, { id: 19, emoji: "🍈", name: "มะละกอ" },
 ];
 
-const UNITS = ["บาท/กก.", "บาท/กำ", "บาท/แพ็ก", "บาท/ลูก", "บาท/มัด"];
+const UNITS = ["กก.", "กำ", "แพ็ก", "ลูก", "มัด"];
 
 // --- 1. เลือกประเภท ---
 const Step1 = ({ onNext, selected, setSelected }) => {
@@ -34,7 +36,7 @@ const Step1 = ({ onNext, selected, setSelected }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
           {filtered.map(cat => (
             <button
               key={cat.id}
@@ -49,16 +51,19 @@ const Step1 = ({ onNext, selected, setSelected }) => {
           ))}
         </div>
 
-        {selected && (
-          <div className="mt-4 flex justify-center">
-            <button
-              onClick={onNext}
-              className="px-8 py-2.5 bg-green-500 text-white font-bold rounded-xl shadow-md hover:bg-green-600 transition-all flex items-center justify-center gap-2 text-sm"
-            >
-              ถัดไป <span className="material-symbols-outlined">arrow_forward</span>
-            </button>
-          </div>
-        )}
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={onNext}
+            disabled={!selected}
+            className={`px-22 py-2.5 font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm ${
+              selected
+                ? 'bg-green-500 text-white hover:bg-green-600 cursor-pointer'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+            }`}
+          >
+            ถัดไป <span className="material-symbols-outlined">arrow_right_alt</span>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -67,7 +72,39 @@ const Step1 = ({ onNext, selected, setSelected }) => {
 // --- 2. อัปโหลดและวิเคราะห์ ---
 const Step2 = ({ onAnalyze, selectedCat, images, setImages, basePrice, setBasePrice, unit, setUnit, desc, setDesc }) => {
   const [loading, setLoading] = useState(false);
+  const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
+  const [category, setCategory] = useState(selectedCat);
   const fileRef = useRef();
+
+  const handleGenerateDescription = async () => {
+    if (!images.length) {
+      alert("กรุณาเลือกรูปภาพก่อน");
+      return;
+    }
+
+    setIsGeneratingDesc(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', images[0].file);
+      formData.append('veg_type', CATEGORIES.find(c => c.id === category).name);
+      formData.append('original_price', basePrice);
+
+      const response = await api.post('scans/descriptions/generate', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      // Add 1 second delay before setting description
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setDesc(response.data.data.description || "");
+    } catch (err) {
+      // Fallback: generate a simple description template if API fails
+      const cat = CATEGORIES.find(c => c.id === category);
+      const template = `${cat.emoji} ${cat.name} สดใหม่ คุณภาพดี ราคา ฿${basePrice} ต่อหน่วย`;
+      setDesc(template);
+    } finally {
+      setIsGeneratingDesc(false);
+    }
+  };
 
   const handleFiles = (files) => {
     const newImgs = Array.from(files).map(f => ({ id: Math.random(), url: URL.createObjectURL(f), file: f }));
@@ -79,7 +116,7 @@ const Step2 = ({ onAnalyze, selectedCat, images, setImages, basePrice, setBasePr
     try {
       const formData = new FormData();
       formData.append('image', images[0].file);
-      formData.append('veg_type', CATEGORIES.find(c => c.id === selectedCat).name);
+      formData.append('veg_type', CATEGORIES.find(c => c.id === category).name);
       formData.append('original_price', basePrice);
       formData.append('description', desc);
 
@@ -112,9 +149,21 @@ const Step2 = ({ onAnalyze, selectedCat, images, setImages, basePrice, setBasePr
         </div>
 
         <div className="space-y-4">
+          <div>
+            <label className="font-bold text-gray-700 block mb-1.5 text-sm">ประเภทสินค้า</label>
+            <select value={category} onChange={e => setCategory(Number(e.target.value))} 
+                    className="w-full p-3 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-green-500 text-sm">
+              {CATEGORIES.map(cat => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.emoji} {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 md:col-span-1">
-              <label className="font-bold text-gray-700 block mb-1.5 text-sm">ราคาตั้งต้น (ต่อหน่วย)</label>
+              <label className="font-bold text-gray-700 block mb-1.5 text-sm">ราคาตั้งต้น(บาท/หน่วยสินค้า)</label>
               <input type="number" value={basePrice} onChange={e => setBasePrice(e.target.value)} className="w-full p-3 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-green-500 text-sm" placeholder="0.00" />
             </div>
             <div className="col-span-2 md:col-span-1">
@@ -125,8 +174,31 @@ const Step2 = ({ onAnalyze, selectedCat, images, setImages, basePrice, setBasePr
             </div>
           </div>
           <div>
-            <label className="font-bold text-gray-700 block mb-1.5 text-sm">บันทึกเพิ่มเติม</label>
-            <textarea rows={3} value={desc} onChange={e => setDesc(e.target.value)} className="w-full p-3 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-green-500 text-sm" placeholder="เช่น ผักสดจากสวนเช้านี้..." />
+            <div className="font-bold text-gray-700 block mb-1.5 text-sm flex items-center justify-between">
+              <span>คำอธิบายสินค้า</span>
+              <button
+                type="button"
+                onClick={handleGenerateDescription}
+                disabled={isGeneratingDesc || !images.length}
+                className="py-1 px-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1.5 text-xs font-semibold"
+              >
+                {isGeneratingDesc ? (
+                  <>
+                    <span className="material-symbols-outlined text-sm animate-spin inline-block">hourglass_empty</span>
+                    สร้าง...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm">auto_awesome</span>
+                    สร้างด้วย AI
+                  </>
+                )}
+              </button>
+            </div>
+            <div className="space-y-1">
+              <textarea rows={3} value={desc} onChange={e => setDesc(e.target.value.slice(0, 300))} className="w-full p-3 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-green-500 text-sm" placeholder="เช่น ผักสดจากสวนเช้านี้..." />
+              <p className="text-xs text-gray-500 text-right">{desc.length}/1000 ตัวอักษร</p>
+            </div>
           </div>
           <button
             onClick={handleSubmit}
@@ -142,12 +214,13 @@ const Step2 = ({ onAnalyze, selectedCat, images, setImages, basePrice, setBasePr
 };
 
 // --- 3. สรุปผลและใส่จำนวน ---
-const Step3 = ({ scanResult, onConfirm }) => {
+const Step3 = ({ scanResult, selectedCat, onConfirm }) => {
   const [finalPrice, setFinalPrice] = useState(scanResult?.recommended_price || scanResult?.basePrice || "");
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
 
   const isOverPrice = Number(finalPrice) > Number(scanResult?.recommended_price);
+  const selectedCategory = CATEGORIES.find(c => c.id === selectedCat);
 
   const handlePost = async () => {
     setLoading(true);
@@ -157,6 +230,7 @@ const Step3 = ({ scanResult, onConfirm }) => {
         price: parseFloat(finalPrice),
         original_price: parseFloat(scanResult.basePrice),
         quantity: parseInt(quantity),
+        description: scanResult?.desc || "",
         expired_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
         status: 'active'
       };
@@ -181,6 +255,29 @@ const Step3 = ({ scanResult, onConfirm }) => {
 
         <div className="space-y-5">
           <h2 className="text-xl font-bold text-gray-800">สรุปการลงขาย</h2>
+          
+          {/* Display selected data from previous steps */}
+          <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">ประเภทสินค้า</span>
+              <span className="font-semibold text-gray-800">{selectedCategory?.emoji} {selectedCategory?.name}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">ราคาตั้งต้น</span>
+              <span className="font-semibold text-gray-800">฿{scanResult?.basePrice}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">หน่วยสินค้า</span>
+              <span className="font-semibold text-gray-800">{scanResult?.unit}</span>
+            </div>
+            {scanResult?.desc && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">คำอธิบาย</span>
+                <span className="font-semibold text-gray-800 text-right max-w-xs">{scanResult?.desc}</span>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-3">
             <div className="flex flex-col gap-1.5">
               <label className="font-bold text-gray-600 text-sm">ราคาขายจริง (฿)</label>
@@ -191,8 +288,11 @@ const Step3 = ({ scanResult, onConfirm }) => {
 
             <div className="flex flex-col gap-1.5">
               <label className="font-bold text-gray-600 text-sm">จำนวนสินค้าในสต็อก</label>
-              <input type="number" min="1" value={quantity} onChange={e => setQuantity(e.target.value)}
-                className="text-xl font-bold p-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-black outline-none" />
+              <div className="relative">
+                <input type="number" min="1" value={quantity} onChange={e => setQuantity(e.target.value)}
+                  className="text-xl font-bold p-4 pr-22 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-black outline-none w-full" />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 font-bold pointer-events-none">{scanResult?.unit}</span>
+              </div>
             </div>
           </div>
 
@@ -233,34 +333,43 @@ export default function AddProduct() {
   const [unit, setUnit] = useState(UNITS[0]);
   const [desc, setDesc] = useState("");
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
-  const handleReset = () => { setStep(1); setSelectedCat(null); setImages([]); setBasePrice(""); setScanResult(null); };
+  const handleReset = () => { setStep(1); setSelectedCat(null); setImages([]); setBasePrice(""); setScanResult(null); setUnit(""); setDesc(""); };
 
   return (
-    <div className="min-h-screen bg-[#fcfcfc] py-6 px-4 font-['Sarabun'] flex items-start justify-center">
-      <div className="max-w-5xl w-full bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden border border-gray-100">
-        {step < 4 && (
-          <div className="p-5 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-4">
-              <button onClick={() => step > 1 ? setStep(s => s - 1) : navigate(-1)} className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-all">
-                <span className="material-symbols-outlined text-[20px]">arrow_back_ios_new</span>
-              </button>
-              <div>
-                <h1 className="text-xl font-black text-gray-900 leading-none">เพิ่มสินค้า</h1>
-                <p className="text-gray-400 mt-1 text-sm">ขั้นตอนที่ {step} จาก 3</p>
+    <div className="min-h-screen bg-gray-50 font-sarabun">
+      <MerchantNavbar 
+        shopName="เพิ่มสินค้า" 
+        ownerName={user?.name || user?.email || "เจ้าของร้าน"} 
+        onLogout={logout} 
+      />
+      
+      <div className="pt-20 py-6 px-4 flex items-start justify-center">
+        <div className="max-w-5xl w-full bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden border border-gray-100">
+          {step < 4 && (
+            <div className="p-5 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-4">
+                <button onClick={() => step > 1 ? setStep(s => s - 1) : navigate(-1)} className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-all">
+                  <span className="material-symbols-outlined text-[20px]">arrow_back_ios_new</span>
+                </button>
+                <div>
+                  <h1 className="text-xl font-black text-gray-900 leading-none">เพิ่มสินค้า</h1>
+                  <p className="text-gray-400 mt-1 text-sm">ขั้นตอนที่ {step} จาก 3</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {[1, 2, 3].map(i => <div key={i} className={`h-2 rounded-full transition-all duration-500 ${step >= i ? 'w-8 bg-green-500' : 'w-2 bg-gray-200'}`} />)}
               </div>
             </div>
-            <div className="flex gap-2">
-              {[1, 2, 3].map(i => <div key={i} className={`h-2 rounded-full transition-all duration-500 ${step >= i ? 'w-8 bg-green-500' : 'w-2 bg-gray-200'}`} />)}
-            </div>
-          </div>
-        )}
+          )}
 
-        <div className="flex-1 relative overflow-y-auto">
-          {step === 1 && <Step1 onNext={() => setStep(2)} selected={selectedCat} setSelected={setSelectedCat} />}
-          {step === 2 && <Step2 onAnalyze={r => { setScanResult(r); setStep(3); }} selectedCat={selectedCat} images={images} setImages={setImages} basePrice={basePrice} setBasePrice={setBasePrice} unit={unit} setUnit={setUnit} desc={desc} setDesc={setDesc} />}
-          {step === 3 && <Step3 scanResult={scanResult} onConfirm={() => setStep(4)} />}
-          {step === 4 && <Step4 onReset={handleReset} />}
+          <div className="flex-1 relative overflow-y-auto">
+            {step === 1 && <Step1 onNext={() => setStep(2)} selected={selectedCat} setSelected={setSelectedCat} />}
+            {step === 2 && <Step2 onAnalyze={r => { setScanResult(r); setStep(3); }} selectedCat={selectedCat} images={images} setImages={setImages} basePrice={basePrice} setBasePrice={setBasePrice} unit={unit} setUnit={setUnit} desc={desc} setDesc={setDesc} />}
+            {step === 3 && <Step3 scanResult={scanResult} selectedCat={selectedCat} onConfirm={() => setStep(4)} />}
+            {step === 4 && <Step4 onReset={handleReset} />}
+          </div>
         </div>
       </div>
     </div>

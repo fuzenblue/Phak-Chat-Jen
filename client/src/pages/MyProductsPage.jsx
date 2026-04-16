@@ -55,7 +55,7 @@ export default function MyProductsPage() {
           imageUrl: p.scan.image_url,
           isActive: p.status === 'active',
           aiSummary: p.scan.ai_summary,
-          quantity: p.quantity // ดึงจำนวนสินค้ามาแสดง
+          quantity: Number(p.quantity) // Ensure quantity is a number
         }));
 
         setProducts(mappedData);
@@ -111,15 +111,15 @@ export default function MyProductsPage() {
   };
 
   const filtered = products.filter((p) => {
-    if (activeTab === "selling") return p.isActive;
-    if (activeTab === "soldout") return !p.isActive;
+    if (activeTab === "selling") return p.quantity > 0 && p.isActive;
+    if (activeTab === "soldout") return p.quantity === 0;
     return true;
   });
 
   const counts = {
     all:     products.length,
-    selling: products.filter((p) => p.isActive).length,
-    soldout: products.filter((p) => !p.isActive).length,
+    selling: products.filter((p) => p.quantity > 0 && p.isActive).length,
+    soldout: products.filter((p) => p.quantity === 0).length,
   };
 
 
@@ -223,7 +223,7 @@ export default function MyProductsPage() {
             <p className="text-sm font-medium">ไม่มีสินค้าในหมวดนี้</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filtered.map((product) => (
               <ProductCard
                 key={product.id}

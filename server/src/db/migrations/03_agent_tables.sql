@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS posts (
   scan_id        UUID REFERENCES vegetable_scans(id) ON DELETE SET NULL,
   shop_id        UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
   original_price DECIMAL(10,2),
+  description    TEXT(1000),
   price          DECIMAL(10,2),
   status         VARCHAR(50) NOT NULL DEFAULT 'active',
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),

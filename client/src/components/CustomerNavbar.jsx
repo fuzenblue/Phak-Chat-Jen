@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function CustomerNavbar({ title, back = false }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -40,7 +41,7 @@ export default function CustomerNavbar({ title, back = false }) {
   );
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-30 bg-white border-b border-gray-100 shadow-sm h-14 font-prompt">
+    <nav className="fixed top-0 left-0 right-0 z-30 bg-white border-b border-gray-100 shadow-sm h-14 font-sarabun">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
 
         {/* Left: logo or back */}
@@ -67,7 +68,19 @@ export default function CustomerNavbar({ title, back = false }) {
         </div>
 
         {/* Right: login button or avatar + dropdown */}
-        <div className="w-1/3 flex justify-end">
+        <div className="w-1/3 flex justify-end gap-2">
+          {/* Show "ร้านของฉัน" button on map page if user is merchant */}
+          {user && location.pathname === '/map' && user.shop_id && (
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center gap-1.5 text-blue-600 font-semibold text-sm hover:bg-blue-50 px-3 py-1.5 rounded-xl transition-colors active:scale-95 shrink-0 whitespace-nowrap"
+              title="ร้านของฉัน"
+            >
+              <span className="material-symbols-outlined text-[18px]">storefront</span>
+              <span className="hidden sm:inline">ร้านของฉัน</span>
+            </button>
+          )}
+          
           {!user ? (
             <button
               onClick={() => navigate('/login')}
