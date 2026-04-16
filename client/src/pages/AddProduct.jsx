@@ -3,17 +3,8 @@ import { useNavigate } from "react-router-dom";
 import MerchantNavbar from "../components/MerchantNavbar";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { CATEGORIES, UNITS } from "../constants";
 
-const CATEGORIES = [
-  { id: 1, emoji: "🥬", name: "ผักกาด" }, { id: 2, emoji: "🍅", name: "มะเขือเทศ" },
-  { id: 3, emoji: "🥦", name: "คะน้า" }, { id: 4, emoji: "🥕", name: "แครอท" },
-  { id: 5, emoji: "🥬", name: "กะหล่ำปลี" }, { id: 6, emoji: "🌶️", name: "พริก" },
-  { id: 7, emoji: "🥒", name: "แตงกวา" }, { id: 8, emoji: "🌽", name: "ข้าวโพด" },
-  { id: 9, emoji: "🍆", name: "มะเขือ" }, { id: 10, emoji: "🎃", name: "ฟักทอง" },
-  { id: 18, emoji: "🥬", name: "ใบกระเพรา" }, { id: 19, emoji: "🍈", name: "มะละกอ" },
-];
-
-const UNITS = ["กก.", "กำ", "แพ็ก", "ลูก", "มัด"];
 
 // --- 1. เลือกประเภท ---
 const Step1 = ({ onNext, selected, setSelected }) => {
@@ -114,6 +105,7 @@ const Step2 = ({ onAnalyze, selectedCat, images, setImages, basePrice, setBasePr
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      const selectedUnit = unit || 'กก.';
       const formData = new FormData();
       formData.append('image', images[0].file);
       formData.append('veg_type', CATEGORIES.find(c => c.id === category).name);
@@ -121,7 +113,7 @@ const Step2 = ({ onAnalyze, selectedCat, images, setImages, basePrice, setBasePr
       formData.append('description', desc);
 
       const response = await api.post('scans', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      onAnalyze({ ...response.data.data, basePrice, unit, desc });
+      onAnalyze({ ...response.data.data, basePrice, unit: selectedUnit, desc });
     } catch (err) {
       alert("เกิดข้อผิดพลาดในการวิเคราะห์รูปภาพ");
     } finally { setLoading(false); }
@@ -230,6 +222,7 @@ const Step3 = ({ scanResult, selectedCat, onConfirm }) => {
         price: parseFloat(finalPrice),
         original_price: parseFloat(scanResult.basePrice),
         quantity: parseInt(quantity),
+        unit: scanResult?.unit || 'กก.',
         description: scanResult?.desc || "",
         expired_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
         status: 'active'

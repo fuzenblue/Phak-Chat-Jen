@@ -8,7 +8,7 @@ import { useAuth } from "../contexts/AuthContext";
 const TABS = [
   { key: "all",     label: "ทั้งหมด" },
   { key: "selling", label: "กำลังขาย" },
-  { key: "soldout", label: "หมดแล้ว" },
+  { key: "soldout", label: "ขายหมดแล้ว" },
 ];
 
 export default function MyProductsPage() {

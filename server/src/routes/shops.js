@@ -126,6 +126,15 @@ router.get('/nearby', async (req, res) => {
         ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
         $3
       )
+      ${veg_type ? `
+        AND s.id IN (
+          SELECT DISTINCT p3.shop_id
+          FROM posts p3
+          JOIN vegetable_scans vs3 ON p3.scan_id = vs3.id
+          WHERE p3.status = 'active'
+            AND vs3.veg_type ILIKE $4
+        )
+      ` : ''}
       GROUP BY s.id
       ORDER BY distance_meters ASC
     `;
@@ -135,17 +144,15 @@ router.get('/nearby', async (req, res) => {
 
     const result = await pool.query(query, values);
 
-    // filter isOpenNow in JS
-    const shops = result.rows
-      .filter(s => isOpenNow(s.opening_hours))
-      .map(s => ({
+    // Include all shops (both open and closed), set is_open_now based on actual calculation
+    const shops = result.rows.map(s => ({
         id: s.id,
         shop_name: s.shop_name,
         shop_image_url: s.shop_image_url,
         latitude: s.latitude,
         longitude: s.longitude,
         distance_meters: parseInt(s.distance_meters),
-        is_open_now: true,
+        is_open_now: isOpenNow(s.opening_hours),
         min_price: s.min_price ? parseFloat(s.min_price) : null,
         post_count: parseInt(s.post_count),
         preview_image_url: s.preview_image_url ?? s.shop_image_url,
@@ -191,12 +198,15 @@ router.get('/:id', async (req, res) => {
       price: p.price,
       status: p.status,
       expired_at: p.expired_at,
+      quantity: p.quantity ?? null,
+      unit: p.unit || 'กก.',
+      description: p.description ?? null,
       scan: {
         image_url: p.scan_image_url,
         veg_type: p.veg_type,
         freshness_score: p.freshness_score,
         freshness_label: getFreshnessLabel(p.freshness_score),
-        ai_summary: p.ai_raw_output?.summary ?? null,
+        ai_summary: p.ai_raw_output?.summary ?? null
       }
     }));
 
