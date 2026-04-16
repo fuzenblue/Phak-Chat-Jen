@@ -15,8 +15,11 @@ export default function EditProductPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   
   const [salePrice, setSalePrice] = useState("");
-  const [quantity, setQuantity] = useState(""); 
+  const [quantity, setQuantity] = useState("");
+  const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
+
+  const isOutOfStock = Number(quantity) === 0 && product?.quantity !== 0;
 
   // 1. ดึงข้อมูลจาก DB จริงมาโชว์ตอนโหลดหน้า
   useEffect(() => {
@@ -30,6 +33,7 @@ export default function EditProductPage() {
         setProduct(data);
         setSalePrice(String(data.price));
         setQuantity(String(data.quantity));
+        setDescription(String(data.description || ""));
         setIsActive(data.status === 'active');
       } catch (err) {
         console.error("Error fetching product:", err);
@@ -56,7 +60,8 @@ export default function EditProductPage() {
       // เตรียม Payload ให้ตรงกับชื่อคอลัมน์ในตาราง posts
       const payload = { 
         price: Number(salePrice), 
-        quantity: Number(quantity), 
+        quantity: Number(quantity),
+        description: description,
         status: isActive ? 'active' : 'inactive' 
       };
 
@@ -122,10 +127,11 @@ export default function EditProductPage() {
           <button 
             onClick={handleSave} 
             disabled={saving || isPriceTooHigh}
-            className={`px-8 py-3 rounded-xl font-bold text-white shadow-lg transition ${
+            className={`px-8 py-3 rounded-xl font-bold text-white shadow-lg transition flex items-center gap-2 ${
               isPriceTooHigh ? "bg-gray-300" : "bg-green-500 hover:bg-green-600"
             }`}
           >
+            <span className="material-symbols-outlined">save</span>
             {saving ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
           </button>
         </div>
@@ -134,10 +140,12 @@ export default function EditProductPage() {
           {/* ส่วนแสดงผลรูปภาพและ AI */}
           <div className="lg:col-span-5">
             <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm p-6">
-              <img src={product?.image} className="w-full aspect-square object-cover rounded-2xl mb-6" alt="" />
+              <div className="relative w-full mb-6">
+                <img src={product?.image} className="w-full aspect-square object-cover rounded-2xl" alt="" />
+              </div>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">{product?.name}</h2>
-                <StatusBadge type={isActive ? scoreToBadgeType(product?.freshness_score) : 'soldout'} />
+                <StatusBadge type={isOutOfStock ? 'soldout' : (isActive ? scoreToBadgeType(product?.freshness_score) : 'inactive')} />
               </div>
               <FreshnessBar score={product?.freshness_score} />
             </div>
@@ -147,6 +155,17 @@ export default function EditProductPage() {
           <div className="lg:col-span-7 space-y-6">
             <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">จัดการคลังสินค้าและราคา</h3>
+              
+              {product?.recommended_price && (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="material-symbols-outlined text-green-600">lightbulb</span>
+                    <p className="font-bold text-green-800 text-sm">ราคาที่ AI แนะนำ</p>
+                  </div>
+                  <p className="text-2xl font-bold text-green-600">฿{product.recommended_price}</p>
+                  <p className="text-xs text-green-700 mt-1">โดยพิจารณาจากความสดของสินค้า</p>
+                </div>
+              )}
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -163,20 +182,46 @@ export default function EditProductPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">จำนวนในสต็อก (Quantity)</label>
-                  <input 
-                    type="number" 
-                    value={quantity} 
-                    onChange={(e) => setQuantity(e.target.value)}
-                    className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 font-bold focus:border-green-400 outline-none"
-                  />
+                  <label className="block text-sm font-bold text-gray-700 mb-2">จำนวนในสต็อก ({product?.scan?.unit || "หน่วย"})</label>
+                  <div className="relative">
+                    <input 
+                      type="number" 
+                      value={quantity} 
+                      onChange={(e) => setQuantity(e.target.value)}
+                      className={`w-full bg-gray-50 border-2 rounded-xl px-4 py-3 pr-16 font-bold focus:outline-none transition ${
+                        isOutOfStock ? 'border-red-400 text-red-600 bg-red-50' : 'border-gray-100 focus:border-green-400'
+                      }`}
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 font-bold pointer-events-none">{product?.scan?.unit || "-"}</span>
+                    {isOutOfStock && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-lg text-red-500">error</span>
+                      </div>
+                    )}
+                  </div>
+                  {isOutOfStock && <p className="text-xs text-red-500 mt-2 font-bold flex items-center gap-1"><span className="material-symbols-outlined text-sm">warning</span> สินค้าจะแสดง "หมดแล้ว" ให้ลูกค้า</p>}
                 </div>
+              </div>
+
+              <div className="mt-6">
+                <label className="block text-sm font-bold text-gray-700 mb-2">คำอธิบายสินค้า</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value.slice(0, 300))}
+                  className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl p-4 font-normal focus:border-green-400 outline-none text-sm"
+                  rows={3}
+                  placeholder="เช่น สินค้าสดใหม่จากสวนเช้านี้..."
+                />
+                <p className="text-xs text-gray-500 text-right mt-1">{description.length}/300 ตัวอักษร</p>
               </div>
 
               <div className="mt-8 pt-8 border-t border-gray-50 flex items-center justify-between">
                 <div>
-                  <p className="font-bold">สถานะการแสดงผล</p>
-                  <p className="text-xs text-gray-400">เปิดเพื่อให้ลูกค้าเห็นในหน้าร้าน</p>
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-gray-600">visibility</span>
+                    <p className="font-bold">สถานะการแสดงผล</p>
+                  </div>
+                  <p className="text-xs text-gray-400">เปิดเพื่อให้ลูกค้าเห็นในหน้าร้าน (ไม่เกี่ยวกับสต็อก)</p>
                 </div>
                 <button 
                   onClick={() => setIsActive(!isActive)}
@@ -187,7 +232,8 @@ export default function EditProductPage() {
               </div>
             </div>
 
-            <button onClick={handleDelete} className="w-full py-4 text-red-500 font-bold hover:bg-red-50 rounded-2xl transition border border-red-100">
+            <button onClick={handleDelete} className="w-full py-4 text-red-500 font-bold hover:bg-red-50 rounded-2xl transition border border-red-100 flex items-center justify-center gap-2">
+              <span className="material-symbols-outlined">delete</span>
               ลบสินค้าออกจากระบบ
             </button>
           </div>

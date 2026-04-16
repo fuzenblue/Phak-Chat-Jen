@@ -7,6 +7,87 @@ import { requireAuth } from '../middleware/auth.js';
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
+// POST /descriptions/generate
+router.post('/descriptions/generate', requireAuth, upload.single('image'), async (req, res) => {
+  const { veg_type, original_price } = req.body;
+
+  if (!req.file) {
+    return res.status(422).json({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: 'กรุณาแนบรูปภาพ' }
+    });
+  }
+
+  try {
+    // Upload image to Cloudinary
+    const imageUrl = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: 'phakchatjen/descriptions' },
+        (err, result) => err ? reject(err) : resolve(result.secure_url)
+      );
+      stream.end(req.file.buffer);
+    });
+
+    // Generate description using Qwen VL
+    const description = await generateDescriptionWithQwen(imageUrl, veg_type, original_price);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        description
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: err.message } });
+  }
+});
+
+async function generateDescriptionWithQwen(imageUrl, vegType, price) {
+  const response = await fetch('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.QWEN_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'qwen-vl-max',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'image_url', image_url: { url: imageUrl } },
+            {
+              type: 'text',
+              text: `สร้างคำอธิบายสินค้าสำหรับ ${vegType} ที่มีราคา ฿${price} ต่อหน่วย โดยอธิบายคุณภาพ สภาพความสดใหม่ และข้อดี ซึ่งจะใช้สำหรับรายการสินค้าออนไลน์
+              
+              ข้อกำหนดสำคัญ (ต้องปฏิบัติตามเสมอ):
+              - ความยาวต้องมากกว่าหรือเท่ากับ 150 ตัวอักษร
+              - ความยาวต้องไม่เกิน 250 ตัวอักษร
+              - หากไม่ตรงตามนี้ ให้แก้ไขให้เป็นไปตามที่กำหนด
+              
+              ตอบกลับเป็น JSON เท่านั้น:
+              {
+                "description": "<คำอธิบาย 150-250 ตัวอักษร>"
+              }
+              
+              ห้ามมีข้อความอื่นนอกจาก JSON`
+            }
+          ]
+        }
+      ]
+    })
+  });
+
+  const data = await response.json();
+  const text = data.choices[0].message.content;
+
+  // ลบ markdown code block ถ้ามี แล้ว parse JSON
+  const cleaned = text.replace(/```json|```/g, '').trim();
+  const result = JSON.parse(cleaned);
+  return result.description;
+}
+
 // POST /scans
 router.post('/', requireAuth, upload.single('image'), async (req, res) => {
   const { veg_type, original_price } = req.body;

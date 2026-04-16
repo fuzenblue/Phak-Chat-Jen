@@ -4,7 +4,8 @@ import StatusBadge, { scoreToBadgeType } from "./StatusBadge";
 
 export default function ProductCard({ product, onDelete }) {
   const navigate = useNavigate();
-  const badgeType = product.isActive ? scoreToBadgeType(product.freshnessScore) : "soldout";
+  const isOutOfStock = product.quantity === 0;
+  const badgeType = isOutOfStock ? "soldout" : (product.isActive ? scoreToBadgeType(product.freshnessScore) : "inactive");
   const hasDiscount = product.salePrice && product.salePrice < product.price;
   const discountPct = hasDiscount
     ? Math.round((1 - product.salePrice / product.price) * 100)
@@ -17,11 +18,20 @@ export default function ProductCard({ product, onDelete }) {
         <img
           src={product.imageUrl || `https://placehold.co/400x300/e8f5e9/1b5e20?text=${encodeURIComponent(product.name)}`}
           alt={product.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-all"
+          style={isOutOfStock ? { filter: 'grayscale(0.8) brightness(0.85)' } : {}}
           onError={(e) => {
             e.target.src = `https://placehold.co/400x300/e8f5e9/1b5e20?text=${encodeURIComponent(product.name)}`;
           }}
         />
+        {isOutOfStock && (
+          <div className="absolute inset-0 top-0 left-0 w-full h-full flex items-center justify-center">
+            {/* <div className="text-center">
+              <span className="material-symbols-outlined text-4xl text-red-500">block</span>
+              <p className="text-lg font-bold text-red-600 mt-1">หมดแล้ว</p>
+            </div> */}
+          </div>
+        )}
       </div>
 
       {/* Body */}

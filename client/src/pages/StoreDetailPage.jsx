@@ -221,8 +221,16 @@ export default function StoreDetailPage() {
                 return (
                   <div key={product.id} onClick={() => setSelectedProduct(product)} className="cursor-pointer bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col group hover:shadow-md transition-shadow duration-500 hover:scale-[1.02]">
                     <div className="relative w-full aspect-square bg-gray-100">
-                      <img src={product.scan.image_url} alt={product.scan.veg_type} className="absolute inset-0 w-full h-full object-cover"/>
-                      {discount > 0 && (
+                      <img src={product.scan.image_url} alt={product.scan.veg_type} style={product.quantity === 0 ? { filter: 'grayscale(0.8) brightness(0.85)' } : {}} className="absolute inset-0 w-full h-full object-cover transition-all"/>
+                      {product.quantity === 0 && (
+                        <div className="absolute inset-0 w-full h-full flex items-center justify-center">
+                          <div className="text-center">
+                            <span className="material-symbols-outlined text-4xl text-red-500">block</span>
+                            <p className="text-lg font-bold text-red-600 mt-1">หมดแล้ว</p>
+                          </div>
+                        </div>
+                      )}
+                      {discount > 0 && product.quantity > 0 && (
                         <div className="absolute top-2 right-2">
                           <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-lg shadow-sm">
                             -{discount}%
