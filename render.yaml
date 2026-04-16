@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: phak-chat-jen-web
+    env: static
+    buildCommand: cd client && npm install && npm run build
+    staticPublishPath: client/dist
+    routes:
+      - path: /*
+        destination: /index.html
