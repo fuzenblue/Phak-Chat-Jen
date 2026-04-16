@@ -54,6 +54,19 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
+// ==================== Root Route ====================
+app.get('/', (req, res) => {
+    res.json({
+        status: 'ok',
+        message: 'Phak-Chat-Jen API Server is running',
+        version: '1.0.0',
+        endpoints: {
+            health: '/api/health',
+            api: '/api/v1',
+        }
+    });
+});
+
 // ==================== 404 Handler ====================
 app.use((req, res) => {
     console.warn(`[404] Route Not Found: ${req.method} ${req.url}`);

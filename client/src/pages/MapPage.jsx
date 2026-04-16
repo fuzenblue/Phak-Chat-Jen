@@ -105,7 +105,6 @@ export default function MapPage() {
         try {
             setLoading(true);
             const radius = 20000; // Fixed 20km radius
-            console.log('Fetching shops from:', { lat, lng, radius, vegType });
             const response = await api.get('shops/nearby', {
                 params: { 
                     lat, 
@@ -115,10 +114,8 @@ export default function MapPage() {
                 }
             });
             
-            console.log('Shops received:', response.data.data);
             const formattedShops = response.data.data.map(s => {
                 const distFormatted = formatDistance(s.distance_meters);
-                console.log(`${s.shop_name}: ${s.distance_meters}m = ${distFormatted}`);
                 return {
                     id: s.id,
                     name: s.shop_name,
@@ -134,7 +131,6 @@ export default function MapPage() {
             });
             setShops(formattedShops);
         } catch (err) {
-            console.error('Fetch shops failed:', err);
             setShops([]);
         } finally {
             setLoading(false);
@@ -146,7 +142,6 @@ export default function MapPage() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition((pos) => {
                 const { latitude, longitude } = pos.coords;
-                console.log('Geolocation found:', { latitude, longitude });
                 // Store in ref (doesn't trigger state updates on location changes)
                 userLocationRef.current = { lat: latitude, lng: longitude };
                 // Update center for map display
@@ -155,13 +150,11 @@ export default function MapPage() {
                 // Fetch shops only once with this location (no category filter)
                 fetchShopsWithFilters(latitude, longitude);
             }, (error) => {
-                console.error('Geolocation error:', error);
                 // Fallback to Bangkok center if geolocation fails
                 userLocationRef.current = { lat: 13.7274, lng: 100.5230 };
                 fetchShopsWithFilters(13.7274, 100.5230);
             });
         } else {
-            console.warn('Geolocation not supported');
             // Fallback if geolocation not supported
             userLocationRef.current = { lat: 13.7274, lng: 100.5230 };
             fetchShopsWithFilters(13.7274, 100.5230);
@@ -273,7 +266,7 @@ export default function MapPage() {
                 return `${dayHours.open} - ${dayHours.close}`;
             }
         } catch (err) {
-            console.error('Error parsing opening hours:', err);
+            // Error parsing opening hours
         }
         return 'ไม่ระบุ';
     };
@@ -366,7 +359,7 @@ export default function MapPage() {
 
                             {/* Hover Card - positioned to the right with highest z-index */}
                             {hoveredShopId === shop.id && (
-                                <div className="card bg-white shadow-2xl absolute right-5 top-1/2 -translate-y-1/2 z-[9999] w-64 cursor-default font-sarabun" onClick={(e) => e.stopPropagation()}>
+                                <div className="card bg-white shadow-2xl hidden md:block absolute right-5 top-1/2 -translate-y-1/2 z-[9999] w-64 cursor-default font-sarabun" onClick={(e) => e.stopPropagation()}>
                                     <figure className="px-3 pt-3">
                                         <img 
                                             src={shop.image_url || 'https://placehold.co/300x200/e8f5e9/4caf50'}
@@ -375,25 +368,25 @@ export default function MapPage() {
                                         />
                                     </figure>
                                     <div className="card-body p-3">
-                                        <h2 className="card-title text-base font-sarabun">{shop.name}</h2>
-                                        <div className="space-y-1 text-xs text-gray-600">
+                                        <h2 className="card-title text-sm md:text-base font-sarabun">{shop.name}</h2>
+                                        <div className="space-y-1 text-[10px] md:text-xs text-gray-600">
                                             <div className="flex items-center gap-2">
-                                                <span className="material-symbols-outlined text-green-500 text-[16px]">schedule</span>
+                                                <span className="material-symbols-outlined text-green-500 text-[14px] md:text-[16px]">schedule</span>
                                                 <span className="font-semibold">เวลาเปิด:</span>
                                                 <span>{getOpeningTime(shop.opening_hours)}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <span className="material-symbols-outlined text-blue-500 text-[16px]">distance</span>
+                                                <span className="material-symbols-outlined text-blue-500 text-[14px] md:text-[16px]">distance</span>
                                                 <span className="font-semibold">ระยะทาง:</span>
                                                 <span>{shop.distance}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <span className="material-symbols-outlined text-orange-500 text-[16px]">local_offer</span>
+                                                <span className="material-symbols-outlined text-orange-500 text-[14px] md:text-[16px]">local_offer</span>
                                                 <span className="font-semibold">ราคา:</span>
                                                 <span>฿{shop.min_price}</span>
                                             </div>
                                             <div className="flex items-center gap-2 pt-1">
-                                                <span className={`material-symbols-outlined text-[16px] ${shop.is_open ? 'text-green-500' : 'text-gray-400'}`}>
+                                                <span className={`material-symbols-outlined text-[14px] md:text-[16px] ${shop.is_open ? 'text-green-500' : 'text-gray-400'}`}>
                                                     {shop.is_open ? 'check_circle' : 'cancel'}
                                                 </span>
                                                 <span className={`px-2 py-0.5 rounded-full text-xs font-semibold text-white ${shop.is_open ? 'bg-green-500' : 'bg-gray-400'}`}>
@@ -404,7 +397,7 @@ export default function MapPage() {
                                         <div className="card-actions justify-end mt-2">
                                             <button 
                                                 onClick={() => navigate(`/shops/${shop.id}`)}
-                                                className="btn btn-primary btn-xs font-sarabun"
+                                                className="btn btn-primary btn-xs text-[10px] md:text-xs font-sarabun"
                                             >
                                                 ดูสินค้า
                                             </button>
@@ -442,27 +435,27 @@ export default function MapPage() {
             />
 
             {/* Zoom controls (right-center) */}
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex flex-col gap-2">
-                <button onClick={handleZoomIn} className="w-10 h-10 bg-white rounded-xl shadow-md flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-all active:scale-95">
-                    <span className="material-symbols-outlined text-[22px]">add</span>
+            <div className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 z-10 flex flex-col gap-2">
+                <button onClick={handleZoomIn} className="w-9 md:w-10 h-9 md:h-10 bg-white rounded-lg md:rounded-xl shadow-md flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-all active:scale-95">
+                    <span className="material-symbols-outlined text-[20px] md:text-[22px]">add</span>
                 </button>
-                <button onClick={handleZoomOut} className="w-10 h-10 bg-white rounded-xl shadow-md flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-all active:scale-95">
-                    <span className="material-symbols-outlined text-[22px]">remove</span>
+                <button onClick={handleZoomOut} className="w-9 md:w-10 h-9 md:h-10 bg-white rounded-lg md:rounded-xl shadow-md flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-all active:scale-95">
+                    <span className="material-symbols-outlined text-[20px] md:text-[22px]">remove</span>
                 </button>
                 <button 
                     onClick={handleCenterOnUser} 
-                    className="w-10 h-10 bg-blue-500 rounded-xl shadow-md flex items-center justify-center text-white hover:bg-blue-600 transition-all active:scale-95"
+                    className="w-9 md:w-10 h-9 md:h-10 bg-blue-500 rounded-lg md:rounded-xl shadow-md flex items-center justify-center text-white hover:bg-blue-600 transition-all active:scale-95"
                     title="ตำแหน่งของฉัน"
                 >
-                    <span className="material-symbols-outlined text-[22px]">my_location</span>
+                    <span className="material-symbols-outlined text-[20px] md:text-[22px]">my_location</span>
                 </button>
             </div>
 
             {/* Bottom Sheet */}
-            <div className="fixed bottom-0 left-70 right-70 z-20 bg-white rounded-t-3xl shadow-[0_-4px_24px_rgba(0,0,0,0.1)] flex flex-col transition-all duration-500 ease-in-out"
+            <div className="fixed bottom-0 left-0 right-0 md:left-[280px] md:right-[280px] z-20 bg-white rounded-t-3xl shadow-[0_-4px_24px_rgba(0,0,0,0.1)] flex flex-col transition-all duration-500 ease-in-out"
                 style={{ height: SNAP_HEIGHTS[snapIndex] }} >
                 {/* Drag handle row */}
-                <div className="flex items-center justify-between px-6 pt-3 pb-1 shrink-0">
+                <div className="flex items-center justify-between px-4 md:px-6 pt-3 pb-1 shrink-0">
                     {/* Pill handle */}
                     <div className="absolute left-1/2 -translate-x-1/2 w-10 h-1 bg-gray-200 rounded-full mt-1" />
 
@@ -494,8 +487,8 @@ export default function MapPage() {
                 </div>
 
                 {/* Header */}
-                <div className="px-10 pt-2 pb-3 shrink-0">
-                    <h2 className="font-bold text-gray-900 text-base">
+                <div className="px-4 md:px-6 pt-2 pb-3 shrink-0">
+                    <h2 className="font-bold text-gray-900 text-sm md:text-base">
                         ร้านที่เปิดอยู่ใกล้คุณ{' '}
                         <span className="text-green-500">({filteredShops.length})</span>
                     </h2>
@@ -507,7 +500,7 @@ export default function MapPage() {
                     className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y divide-y divide-gray-50"
                 >
                     {filteredShops.length === 0 ? (
-                        <div className="py-10 text-center text-gray-400 text-sm">ไม่พบร้านค้าที่ตรงกับตัวกรอง</div>
+                        <div className="py-10 text-center text-gray-400 text-xs md:text-sm">ไม่พบร้านค้าที่ตรงกับตัวกรอง</div>
                     ) : (
                         filteredShops.map(shop => {
                             const isSelected = shop.id === selectedShopId;
@@ -516,7 +509,7 @@ export default function MapPage() {
                                     key={shop.id}
                                     ref={el => { cardRefs.current[shop.id] = el; }}
                                     onClick={() => handleShopCardClick(shop.id)}
-                                    className={`px-10 py-3 flex gap-3 items-center hover:bg-gray-50 cursor-pointer transition-colors ${
+                                    className={`px-4 md:px-6 py-2.5 md:py-3 flex gap-2 md:gap-3 items-center hover:bg-gray-50 cursor-pointer transition-colors ${
                                         isSelected
                                             ? 'bg-green-50 border-l-4 border-green-500'
                                             : 'border-l-4 border-transparent'
@@ -526,28 +519,28 @@ export default function MapPage() {
                                     <img
                                         src={shop.image_url || 'https://placehold.co/150x150/e8f5e9/4caf50?text=🌿'}
                                         alt={shop.name}
-                                        className="w-14 h-14 rounded-2xl object-cover flex-shrink-0 bg-gray-100"
+                                        className="w-12 md:w-14 h-12 md:h-14 rounded-lg md:rounded-2xl object-cover flex-shrink-0 bg-gray-100"
                                     />
 
                                     {/* Middle info */}
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-sm text-gray-800 truncate">{shop.name}</p>
-                                        <p className="text-xs text-gray-400 mt-0.5">{shop.items_count} รายการ</p>
-                                        <p className="text-sm font-bold text-green-500 mt-0.5">
-                                            เริ่มต้น ฿{shop.min_price}
+                                        <p className="font-semibold text-xs md:text-sm text-gray-800 truncate">{shop.name}</p>
+                                        <p className="text-[10px] md:text-xs text-gray-400 mt-0.5 hidden sm:block">{shop.items_count} รายการ</p>
+                                        <p className="text-xs md:text-sm font-bold text-green-500 mt-0.5">
+                                            ฿{shop.min_price}
                                         </p>
                                     </div>
 
                                     {/* Right: badge + distance */}
-                                    <div className="flex flex-col items-end gap-1 shrink-0">
+                                    <div className="flex flex-col items-end gap-0.5 md:gap-1 shrink-0">
                                         <span
-                                            className={`text-[10px] rounded-full px-2 py-0.5 font-semibold text-white ${
+                                            className={`text-[8px] md:text-[10px] rounded-full px-1.5 md:px-2 py-0.5 font-semibold text-white ${
                                                 shop.is_open ? 'bg-green-500' : 'bg-gray-400'
                                             }`}
                                         >
-                                            {shop.is_open ? 'เปิดอยู่' : 'ปิดอยู่'}
+                                            {shop.is_open ? 'เปิด' : 'ปิด'}
                                         </span>
-                                        <span className="text-xs text-gray-400">
+                                        <span className="text-[9px] md:text-xs text-gray-400">
                                             {shop.distance || 'N/A'}
                                         </span>
                                     </div>
