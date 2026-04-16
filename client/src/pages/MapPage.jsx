@@ -452,7 +452,7 @@ export default function MapPage() {
             </div>
 
             {/* Bottom Sheet */}
-            <div className="fixed bottom-0 left-0 right-0 md:left-[280px] md:right-[280px] z-20 bg-white rounded-t-3xl md:rounded-3xl shadow-[0_-4px_24px_rgba(0,0,0,0.1)] flex flex-col transition-all duration-500 ease-in-out"
+            <div className="fixed bottom-0 left-0 right-0 md:left-[280px] md:right-[280px] z-20 bg-white rounded-t-3xl shadow-[0_-4px_24px_rgba(0,0,0,0.1)] flex flex-col transition-all duration-500 ease-in-out"
                 style={{ height: SNAP_HEIGHTS[snapIndex] }} >
                 {/* Drag handle row */}
                 <div className="flex items-center justify-between px-4 md:px-6 pt-3 pb-1 shrink-0">
