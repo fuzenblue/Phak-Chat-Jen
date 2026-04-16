@@ -42,12 +42,23 @@ CREATE TABLE IF NOT EXISTS posts (
   scan_id        UUID REFERENCES vegetable_scans(id) ON DELETE SET NULL,
   shop_id        UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
   original_price DECIMAL(10,2),
+  quantity       INTEGER,
+  unit           VARCHAR(50),
   description    TEXT(1000),
   price          DECIMAL(10,2),
   status         VARCHAR(50) NOT NULL DEFAULT 'active',
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   expired_at     TIMESTAMPTZ
 );
+
+-- Keep existing databases compatible when this SQL is reapplied manually
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS quantity INTEGER;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS unit VARCHAR(50);
+
+-- Normalize missing unit values to first configured unit (กก.)
+UPDATE posts
+SET unit = 'กก.'
+WHERE unit IS NULL OR TRIM(unit) = '' OR unit = 'ชิ้น';
 
 -- Favorites
 CREATE TABLE IF NOT EXISTS favorites (

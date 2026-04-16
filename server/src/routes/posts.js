@@ -46,6 +46,7 @@ router.get('/my-shop', requireAuth, async (req, res) => {
       original_price: p.original_price,
       price: p.price,
       quantity: p.quantity,
+      unit: p.unit || 'กก.',
       status: p.status,
       expired_at: p.expired_at,
       created_at: p.created_at,
@@ -67,7 +68,7 @@ router.get('/my-shop', requireAuth, async (req, res) => {
 
 // POST /posts — post product
 router.post('/', requireAuth, async (req, res) => {
-  const { scan_id, price, original_price, quantity, description, expired_at } = req.body;
+  const { scan_id, price, original_price, quantity, unit, description, expired_at } = req.body;
   const user_id = req.user.id;
 
   try {
@@ -82,9 +83,9 @@ router.post('/', requireAuth, async (req, res) => {
     const shop_id = shopResult.rows[0].id;
 
     const result = await pool.query(
-      `INSERT INTO posts (scan_id, shop_id, price, original_price, quantity, description, expired_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [scan_id, shop_id, price, original_price, quantity ?? 1, description || "", expired_at]
+      `INSERT INTO posts (scan_id, shop_id, price, original_price, quantity, unit, description, expired_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [scan_id, shop_id, price, original_price, quantity ?? 1, unit || 'กก.', description || "", expired_at]
     );
 
     res.status(201).json({ success: true, data: result.rows[0] });
@@ -129,6 +130,7 @@ router.get('/:id', requireAuth, async (req, res) => {
         original_price: p.original_price,
         recommended_price: p.original_price,
         quantity: p.quantity,
+        unit: p.unit || 'กก.',
         description: p.description,
         status: p.status,
         freshness_score: p.freshness_score,
@@ -146,7 +148,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 // PATCH /posts/:id — edit post
 router.patch('/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const { price, quantity, status, description } = req.body;
+  const { price, quantity, unit, status, description } = req.body;
   const user_id = req.user.id;
 
   try {
@@ -170,6 +172,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
 
     if (price !== undefined)       { fields.push(`price=$${i++}`);       values.push(price); }
     if (quantity !== undefined)    { fields.push(`quantity=$${i++}`);    values.push(quantity); }
+    if (unit !== undefined)        { fields.push(`unit=$${i++}`);        values.push(unit); }
     if (status !== undefined)      { fields.push(`status=$${i++}`);      values.push(status); }
     if (description !== undefined) { fields.push(`description=$${i++}`); values.push(description); }
 

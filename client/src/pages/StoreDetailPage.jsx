@@ -97,15 +97,39 @@ export default function StoreDetailPage() {
   const formatHours = (hours) => {
     if (!hours) return "ไม่ระบุเวลา";
     if (typeof hours === 'string') return hours;
-    
-    // Simple logic to show today's hours or summary
-    const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-    const today = days[new Date().getDay()];
-    const h = hours[today];
-    if (h && h.enabled) {
-      return `${h.open} - ${h.close}`;
+    return "ดูเวลาเปิด";
+  };
+
+  const renderOpeningHours = (hours) => {
+    if (!hours || typeof hours === 'string') {
+      return <span className="text-gray-500">{hours || "ไม่ระบุเวลา"}</span>;
     }
-    return "ปิดทำการวันนี้";
+
+    const dayLabels = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+    const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const today = new Date().getDay();
+
+    return (
+      <div className="space-y-1.5">
+        {dayKeys.map((day, idx) => {
+          const h = hours[day];
+          const isToday = idx === today;
+          const isOpen = h && h.enabled;
+
+          return (
+            <div
+              key={day}
+              className={`flex justify-between text-sm ${isToday ? 'bg-green-50 px-2 py-1 rounded-lg font-semibold text-green-700' : 'text-gray-600'}`}
+            >
+              <span>{dayLabels[idx]}</span>
+              <span>
+                {isOpen ? `${h.open} - ${h.close}` : 'ปิดทำการ'}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   if (loading) {
@@ -133,9 +157,9 @@ export default function StoreDetailPage() {
       <main className="max-w-5xl mx-auto w-full px-4 py-6 space-y-6">
         <section className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 space-y-5">
           <div className="flex gap-4">
-            <img 
-              src={shop.image_url || 'https://placehold.co/200x200/e8f5e9/4caf50?text=🌿'} 
-              alt={shop.shop_name} 
+            <img
+              src={shop.image_url || 'https://placehold.co/200x200/e8f5e9/4caf50?text=🌿'}
+              alt={shop.shop_name}
               className="w-20 h-20 rounded-2xl object-cover shadow-sm bg-gray-100 shrink-0"
               onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/200x200/e8f5e9/4caf50?text=🌿' }}
             />
@@ -154,14 +178,16 @@ export default function StoreDetailPage() {
             </div>
           </div>
 
-          <div className="space-y-2 text-sm text-gray-500">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-gray-400">schedule</span>
-              <span>{formatHours(shop.opening_hours)}</span>
+          <div className="space-y-4">
+            <div className="flex items-start gap-2">
+              <span className="material-symbols-outlined text-[18px] text-gray-400 shrink-0 mt-0.5">schedule</span>
+              <div className="flex-1">
+                {renderOpeningHours(shop.opening_hours)}
+              </div>
             </div>
             <div className="flex items-start gap-2">
               <span className="material-symbols-outlined text-[18px] text-gray-400 shrink-0 mt-0.5">location_on</span>
-              <span className="line-clamp-2">{shop.shop_address || "ไม่ระบุที่อยู่"}</span>
+              <span className="text-sm text-gray-600 line-clamp-3">{shop.shop_address || "ไม่ระบุที่อยู่"}</span>
             </div>
           </div>
 
@@ -180,11 +206,10 @@ export default function StoreDetailPage() {
               aria-label={isFavorited ? 'ลบออกจากรายการโปรด' : 'เพิ่มในรายการโปรด'}
             >
               <span
-                className={`material-symbols-outlined text-[24px] transition-colors ${
-                  isFavorited
+                className={`material-symbols-outlined text-[24px] transition-colors ${isFavorited
                     ? 'text-red-500 [font-variation-settings:"FILL"_1]'
                     : 'text-gray-400'
-                }`}
+                  }`}
               >
                 favorite
               </span>
@@ -202,7 +227,7 @@ export default function StoreDetailPage() {
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-gray-800 flex items-center gap-2 px-1">
-              สินค้าในร้าน 
+              สินค้าในร้าน
               <span className="text-gray-400 font-normal text-sm">({shop.posts?.length || 0})</span>
             </h3>
           </div>
@@ -221,12 +246,11 @@ export default function StoreDetailPage() {
                 return (
                   <div key={product.id} onClick={() => setSelectedProduct(product)} className="cursor-pointer bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col group hover:shadow-md transition-shadow duration-500 hover:scale-[1.02]">
                     <div className="relative w-full aspect-square bg-gray-100">
-                      <img src={product.scan.image_url} alt={product.scan.veg_type} style={product.quantity === 0 ? { filter: 'grayscale(0.8) brightness(0.85)' } : {}} className="absolute inset-0 w-full h-full object-cover transition-all"/>
-                      {product.quantity === 0 && (
-                        <div className="absolute inset-0 w-full h-full flex items-center justify-center">
-                          <div className="text-center">
-                            <span className="material-symbols-outlined text-4xl text-red-500">block</span>
-                            <p className="text-lg font-bold text-red-600 mt-1">หมดแล้ว</p>
+                      <img src={product.scan.image_url} alt={product.scan.veg_type} style={product.quantity == 0 ? { filter: 'grayscale(0.8) brightness(0.85)' } : {}} className="absolute inset-0 w-full h-full object-cover transition-all" />
+                      {product.quantity == 0 && (
+                        <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
+                          <div className="text-center px-3 py-2 rounded-2xl bg-white/90 shadow-sm border border-red-100">
+                            <p className="text-lg font-bold text-red-600 mt-1">ขายหมดแล้ว</p>
                           </div>
                         </div>
                       )}
@@ -257,9 +281,22 @@ export default function StoreDetailPage() {
                       <div className="space-y-1">
                         <div className="flex justify-between items-center text-[10px]">
                           <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden mr-2">
-                            <div className={`h-full ${getFreshnessBarColor(product.scan.freshness_score)} transition-all`} style={{ width: `${product.scan.freshness_score}%` }}/>
+                            <div className={`h-full ${getFreshnessBarColor(product.scan.freshness_score)} transition-all`} style={{ width: `${product.scan.freshness_score}%` }} />
                           </div>
                           <span className="shrink-0 font-bold text-gray-500 font-funnel">{product.scan.freshness_score}/100</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[12px]">inventory_2</span>
+                            คงเหลือ
+                          </span>
+                          {product.quantity == 0 ? (
+                            <span className="font-bold text-red-500">ขายหมดแล้ว</span>
+                          ) : (
+                            <span className="font-bold text-gray-700">
+                              {product.quantity ?? '-'} {product.quantity != null ? (product.unit || 'กก.') : ''}
+                            </span>
+                          )}
                         </div>
                         <p className="text-[10px] text-gray-400 line-clamp-2 leading-snug">
                           {product.scan.ai_summary}
@@ -283,14 +320,14 @@ export default function StoreDetailPage() {
 
       {/* Product Detail Modal */}
       {selectedProduct && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4 transition-all duration-300 animate-fade-in" onClick={() => setSelectedProduct(null)}>
-          <div 
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4 transition-all duration-300 animate-fade-in font-sarabun" onClick={() => setSelectedProduct(null)}>
+          <div
             onClick={e => e.stopPropagation()}
-            className="bg-white w-full sm:w-[750px] h-[85vh] sm:h-[450px] sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl flex flex-col sm:flex-row overflow-hidden shadow-2xl animate-slide-up sm:animate-zoom-in relative"
+            className="bg-white w-full sm:w-[800px] h-[90vh] sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl flex flex-col sm:flex-row overflow-hidden shadow-2xl animate-slide-up sm:animate-zoom-in relative"
           >
             {/* Desktop Close Button */}
-            <button 
-              onClick={() => setSelectedProduct(null)} 
+            <button
+              onClick={() => setSelectedProduct(null)}
               className="hidden sm:flex absolute top-4 right-4 z-50 w-9 h-9 bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 rounded-full items-center justify-center transition-colors"
               aria-label="ปิด"
             >
@@ -298,10 +335,10 @@ export default function StoreDetailPage() {
             </button>
 
             {/* Header + Image */}
-            <div className="relative w-full sm:w-[45%] aspect-square sm:aspect-auto bg-gray-100 shrink-0">
-              <img src={selectedProduct.scan.image_url} alt={selectedProduct.scan.veg_type} className="absolute inset-0 w-full h-full object-cover"/>
-              <button 
-                onClick={() => setSelectedProduct(null)} 
+            <div className="relative w-full sm:w-[42%] aspect-square sm:aspect-auto bg-gray-100 shrink-0">
+              <img src={selectedProduct.scan.image_url} alt={selectedProduct.scan.veg_type} className="absolute inset-0 w-full h-full object-cover" />
+              <button
+                onClick={() => setSelectedProduct(null)}
                 className="sm:hidden absolute top-4 right-4 w-9 h-9 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-colors"
                 aria-label="ปิด"
               >
@@ -311,66 +348,73 @@ export default function StoreDetailPage() {
 
             {/* Details Content */}
             <div className="flex flex-col flex-1 min-w-0 bg-white">
-              <div className="p-6 sm:pr-14 overflow-y-auto flex-1 font-prompt space-y-5">
-              {/* Title & Status */}
-              <div>
-                <h3 className="text-2xl font-bold text-gray-800">{selectedProduct.scan.veg_type}</h3>
-                <div className="flex flex-wrap gap-2 mt-2.5">
-                  <span className={`text-xs px-2.5 py-1 rounded-lg font-bold ${getFreshnessStatus(selectedProduct.scan.freshness_score).color}`}>
-                    ความสด {selectedProduct.scan.freshness_score}%
-                  </span>
-                  {selectedProduct.scan.freshness_label && (
-                    <span className="text-xs px-2.5 py-1 rounded-lg bg-gray-100 text-gray-600 font-semibold border border-gray-200">
-                      {selectedProduct.scan.freshness_label}
+              <div className="p-6 sm:pr-14 overflow-y-auto flex-1 font-sarabun space-y-5">
+                {/* Title & Status */}
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-800">{selectedProduct.scan.veg_type}</h3>
+                  <div className="flex flex-wrap gap-2 mt-2.5">
+                    <span className={`text-xs px-2.5 py-1 rounded-lg font-bold ${getFreshnessStatus(selectedProduct.scan.freshness_score).color}`}>
+                      ความสด {selectedProduct.scan.freshness_score}%
                     </span>
+                    {selectedProduct.scan.freshness_label && (
+                      <span className="text-xs px-2.5 py-1 rounded-lg bg-gray-100 text-gray-600 font-semibold border border-gray-200">
+                        {selectedProduct.scan.freshness_label}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Product Description */}
+                <div className="bg-sky-50 rounded-2xl p-4 border border-sky-100/50">
+                  <span className="text-xs font-bold text-sky-700 block mb-1.5">รายละเอียดสินค้า</span>
+                  <p className="text-sm text-sky-900 leading-relaxed">
+                    {selectedProduct.description || 'ไม่มีรายละเอียดสินค้า'}
+                  </p>
+                </div>
+
+                {/* AI Analysis */}
+                <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100/50">
+                  <span className="text-xs font-bold text-amber-700 block mb-1.5">AI วิเคราะห์สภาพสินค้า</span>
+                  <p className="text-sm text-amber-900 leading-relaxed">
+                    {selectedProduct.scan.ai_summary || 'ไม่มีข้อมูลการวิเคราะห์จาก AI'}
+                  </p>
+                </div>
+
+                {/* Price Row */}
+                <div className="flex items-end gap-3 p-4 bg-green-50 rounded-2xl border border-green-100/50 relative overflow-hidden">
+                  <div className="flex flex-col relative z-10">
+                    <span className="text-[11px] text-green-700 font-bold tracking-wide">ราคาขาย</span>
+                    <span className="text-3xl font-bold text-green-600 font-sarabun leading-none mt-0.5">฿{selectedProduct.price}</span>
+                  </div>
+                  {selectedProduct.original_price && parseFloat(selectedProduct.original_price) > parseFloat(selectedProduct.price) && (
+                    <div className="flex flex-col items-start mb-0.5 relative z-10">
+                      <span className="text-[11px] text-gray-400">ราคาเดิม</span>
+                      <span className="text-[15px] font-bold text-gray-400 line-through font-sarabun leading-none">฿{selectedProduct.original_price}</span>
+                    </div>
+                  )}
+                  {/* Save label */}
+                  {selectedProduct.original_price && parseFloat(selectedProduct.original_price) > parseFloat(selectedProduct.price) && (
+                    <div className="ml-auto bg-red-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-sm relative z-10">
+                      ลด {Math.round(((parseFloat(selectedProduct.original_price) - parseFloat(selectedProduct.price)) / parseFloat(selectedProduct.original_price)) * 100)}%
+                    </div>
                   )}
                 </div>
+
+                {/* Quantity */}
+                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-2xl border border-blue-100/50">
+                  <span className="material-symbols-outlined text-blue-600 text-[20px]">inventory_2</span>
+                  <div className="flex-1">
+                    <span className="text-[11px] text-blue-700 font-bold tracking-wide block">สินค้าคงเหลือ</span>
+                    <span className="text-lg font-bold text-blue-600 font-sarabun">{selectedProduct.quantity ?? 'ไม่ระบุ'} {selectedProduct.quantity != null ? (selectedProduct.unit || 'กก.') : ''}</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Price Row */}
-              <div className="flex items-end gap-3 p-4 bg-green-50 rounded-2xl border border-green-100/50 relative overflow-hidden">
-                <div className="flex flex-col relative z-10">
-                  <span className="text-[11px] text-green-700 font-bold tracking-wide">ราคาขาย</span>
-                  <span className="text-3xl font-bold text-green-600 font-funnel leading-none mt-0.5">฿{selectedProduct.price}</span>
-                </div>
-                {selectedProduct.original_price && parseFloat(selectedProduct.original_price) > parseFloat(selectedProduct.price) && (
-                  <div className="flex flex-col items-start mb-0.5 relative z-10">
-                    <span className="text-[11px] text-gray-400">ราคาเดิม</span>
-                    <span className="text-[15px] font-bold text-gray-400 line-through font-funnel leading-none">฿{selectedProduct.original_price}</span>
-                  </div>
-                )}
-                {/* Save label */}
-                {selectedProduct.original_price && parseFloat(selectedProduct.original_price) > parseFloat(selectedProduct.price) && (
-                  <div className="ml-auto bg-red-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-sm relative z-10">
-                    ลด {Math.round(((parseFloat(selectedProduct.original_price) - parseFloat(selectedProduct.price)) / parseFloat(selectedProduct.original_price)) * 100)}%
-                  </div>
-                )}
-              </div>
-
-              {/* AI Breakdown */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-green-500 text-[20px]">psychiatry</span>
-                  AI วิเคราะห์สภาพสินค้า
-                </h4>
-                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 text-[13px] text-gray-600 leading-relaxed shadow-inner">
-                  {selectedProduct.scan.ai_summary || "ไม่มีข้อมูลการวิเคราะห์สภาพสินค้าเพิ่มเติม"}
-                </div>
-              </div>
-              
-              {/* Expiry Warning */}
-              {selectedProduct.expired_at && (
-                <div className="flex items-start gap-2 bg-yellow-50 text-yellow-700 p-3 rounded-xl border border-yellow-100/50 text-[11px] font-semibold">
-                  <span className="material-symbols-outlined text-[16px] shrink-0 mt-0.5">timer</span>
-                  <p>ควรขายให้หมดภายใน {new Date(selectedProduct.expired_at).toLocaleDateString('th-TH')} เวลา {new Date(selectedProduct.expired_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-              )}
-            </div>
               {/* Action Bar (Mobile Only) */}
               <div className="p-4 bg-white border-t border-gray-50 shrink-0 sm:hidden">
-                 <button onClick={() => setSelectedProduct(null)} className="w-full bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-bold rounded-2xl py-3.5 transition-all text-sm">
-                   ปิดหน้าต่าง
-                 </button>
+                <button onClick={() => setSelectedProduct(null)} className="w-full bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-bold rounded-2xl py-3.5 transition-all text-sm">
+                  ปิดหน้าต่าง
+                </button>
               </div>
             </div>
           </div>

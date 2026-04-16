@@ -4,7 +4,7 @@ const BADGE_CONFIG = {
   fresh:   { label: "🟢 สดใหม่",     classes: "bg-green-500 text-white" },
   near:    { label: "🟠 ใกล้หมด",    classes: "bg-amber-400 text-white" },
   urgent:  { label: "🔴 ควรเร่งขาย", classes: "bg-red-500 text-white" },
-  soldout: { label: "หมดแล้ว",        classes: "bg-gray-300 text-gray-600" },
+  soldout: { label: "ขายหมดแล้ว",     classes: "bg-gray-300 text-gray-600" },
 };
 
 //scoreToBadgeType — แปลง freshness score → badge type ใช้แทน AI จนกว่าจะเชื่อม Qwen VL Max

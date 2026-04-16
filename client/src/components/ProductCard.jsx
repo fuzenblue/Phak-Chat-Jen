@@ -14,7 +14,7 @@ export default function ProductCard({ product, onDelete }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       {/* รูปสินค้า */}
-      <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+      <div className="relative aspect-4/3 bg-gray-50 overflow-hidden">
         <img
           src={product.imageUrl || `https://placehold.co/400x300/e8f5e9/1b5e20?text=${encodeURIComponent(product.name)}`}
           alt={product.name}
@@ -25,11 +25,10 @@ export default function ProductCard({ product, onDelete }) {
           }}
         />
         {isOutOfStock && (
-          <div className="absolute inset-0 top-0 left-0 w-full h-full flex items-center justify-center">
-            {/* <div className="text-center">
-              <span className="material-symbols-outlined text-4xl text-red-500">block</span>
-              <p className="text-lg font-bold text-red-600 mt-1">หมดแล้ว</p>
-            </div> */}
+          <div className="absolute inset-0 top-0 left-0 w-full h-full flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
+            <div className="text-center px-3 py-2 rounded-2xl bg-white/90 shadow-sm border border-red-100">
+              <p className="text-lg font-bold text-red-600 mt-1">ขายหมดแล้ว</p>
+            </div>
           </div>
         )}
       </div>
@@ -42,7 +41,7 @@ export default function ProductCard({ product, onDelete }) {
             <h3 className="font-bold text-gray-900 text-base leading-tight">{product.name}</h3>
             <p className="text-sm text-gray-400">{product.category}</p>
           </div>
-          <div className="flex-shrink-0 mt-0.5">
+          <div className="shrink-0 mt-0.5">
             <StatusBadge type={badgeType} />
           </div>
         </div>
@@ -95,7 +94,7 @@ export default function ProductCard({ product, onDelete }) {
           </button>
           <button
             onClick={() => onDelete(product.id)}
-            className="w-10 h-10 flex items-center justify-center rounded-xl border border-red-100 text-red-400 hover:bg-red-50 transition flex-shrink-0"
+            className="w-10 h-10 flex items-center justify-center rounded-xl border border-red-100 text-red-400 hover:bg-red-50 transition shrink-0"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
