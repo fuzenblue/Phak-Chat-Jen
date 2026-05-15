@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
   // --- เพิ่มส่วนนี้: ตัวดักจับการย้อนกลับ (popstate) ---
   useEffect(() => {
     const handleAuth = () => {
-      const isPublic = ['/login', '/map', '/register'].includes(window.location.pathname);
+      const isPublic = ['/', '/login', '/map', '/register'].includes(window.location.pathname);
       if (!localStorage.getItem('token') && !isPublic) {
         window.location.replace('/login');
       }
@@ -48,7 +48,7 @@ export function AuthProvider({ children }) {
   // -------------------------------------------
 
   useEffect(() => {
-    const publicPaths = ['/login', '/map', '/register']; 
+    const publicPaths = ['/', '/login', '/map', '/register']; 
     const isPublicPath = publicPaths.includes(window.location.pathname);
 
     if (!loading && !token && !isPublicPath) {
