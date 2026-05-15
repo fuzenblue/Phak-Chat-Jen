@@ -1,9 +1,0 @@
-{
-  "name": "phak-chat-jen",
-  "scripts": {
-    "install:all": "cd client && npm install && cd ../server && npm install",
-    "build": "cd client && npm run build",
-    "start": "cd server && npm run start"
-  },
-  "dependencies": {}
-}
