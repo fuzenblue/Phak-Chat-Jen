@@ -2,6 +2,9 @@
 
 A modern full-stack e-commerce web application for fresh vegetable farmers and consumers in Thailand.
 
+for demo link:
+if frontend is not work please click API Backend: [https://phak-chat-jen-api.onrender.com](https://phak-chat-jen-api.onrender.com) first Because render.com shuts down server every 15 minutes when not in use.
+
 ## Introduction
 
 Phak-Chat-Jen (ผักชัดเจน) connects local vegetable farmers directly with consumers. Built with **React 19 + Vite + Tailwind CSS** (frontend) and **Node.js + Express** (backend), featuring:
