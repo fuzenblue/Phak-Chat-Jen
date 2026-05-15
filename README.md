@@ -66,6 +66,6 @@ Access at: http://localhost:5173
 
 ## Deployment
 
-**Live Application**: [https://phak-chat-jen-web.onrender.com](https://phak-chat-jen-web.onrender.com)
+**Live Application**: [https://phak-chat-jen.onrender.com](https://phak-chat-jen.onrender.com)
 
 **API Backend**: [https://phak-chat-jen-api.onrender.com](https://phak-chat-jen-api.onrender.com)
